@@ -1,75 +1,211 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Game Gallery</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Game Gallery — find a game…</title>
 <style>
-body {
-    margin: 0;
-    padding: 20px;
-    background: linear-gradient(to bottom, #c0d8f0, #eaf2fc);
-    font-family: "Tahoma", sans-serif;
-}
-h1 {
-    text-align: center;
-    margin-bottom: 30px;
-    font-size: 2.5em;
-    color: #003366;
-    text-shadow: 1px 1px #fff;
-}
-.link-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
-}
-.link-item {
-    background: #e0eaff;
-    border: 2px solid #004080;
-    border-radius: 4px;
-    padding: 10px;
-    text-align: center;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-.link-item:hover {
-    transform: translateY(-3px) scale(1.03);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    background: #f0f8ff;
-}
-.link-item img {
-    width: 40px;
-    height: 40px;
-    margin-bottom: 8px;
-}
-.link-item span {
-    font-size: 0.9em;
-    text-align: center;
-}
-@keyframes fadeInUp {
-    0% {opacity:0; transform:translateY(15px);}
-    100% {opacity:1; transform:translateY(0);}
-}
-.animated {animation: fadeInUp 0.4s ease forwards;}
+  :root{
+    --accent:#1e84c9;
+    --accent-2:#63b2cc;
+    --card-border: rgba(30,132,201,0.14);
+    --text:#043347;
+  }
+
+  /* Background: Bliss wallpaper (Microsoft-hosted preferred).
+     Fallback gradient provided. */
+  :root { --bliss-url: url("https://microsoft.design/wp-content/uploads/2023/06/bliss-3840x2160.jpg"); }
+
+  html,body{height:100%;margin:0;font-family: "Segoe UI", Tahoma, Arial, sans-serif;color:var(--text);-webkit-font-smoothing:antialiased;}
+
+  body{
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.25), rgba(240,252,255,0.45)),
+      var(--bliss-url),
+      linear-gradient(180deg,#c9e0f7,#eef7fe);
+    background-size: cover;
+    background-position: center;
+    padding:20px;
+  }
+
+  /* When locked, blur the main content behind overlay */
+  body.locked .container{ filter: blur(6px) saturate(110%); pointer-events: none; user-select: none; }
+  body.locked { overflow: hidden; } /* prevent scroll while locked */
+
+  .container{
+    max-width:1200px;margin:0 auto;background:rgba(255,255,255,0.55);border-radius:12px;padding:14px;
+    box-shadow: 0 20px 50px rgba(6,30,50,0.12);backdrop-filter: blur(6px) saturate(120%);border:1px solid rgba(255,255,255,0.6);
+  }
+
+  header{display:flex;gap:12px;align-items:center;}
+  .logo{
+    width:84px;height:56px;border-radius:8px;background:linear-gradient(180deg,#e8f6ff,#dff3ff);
+    display:flex;align-items:center;justify-content:center;font-weight:800;color:#003a6b;font-size:15px;
+    box-shadow: 0 8px 18px rgba(6,32,60,0.06);border:1px solid rgba(0,0,0,0.04)
+  }
+  h1{margin:0;font-size:22px;color:#00334a;letter-spacing:-0.4px}
+  .meta{font-size:13px;color:#09334a;opacity:0.95}
+
+  .top-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+  a.contribute{background:linear-gradient(180deg,var(--accent),var(--accent-2));color:white;padding:7px 12px;border-radius:8px;text-decoration:none;font-weight:700;box-shadow:0 8px 22px rgba(98,154,200,0.16)}
+
+  /* search bar */
+  .search-row{display:flex;gap:12px;align-items:center;margin-top:14px;}
+  .search{
+    flex:1;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.8);border-radius:12px;padding:10px 12px;border:1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 8px 18px rgba(6,32,60,0.04);
+  }
+  .search input{
+    border:0;outline:none;font-size:16px;background:transparent;width:100%;
+    color:var(--text);
+  }
+  .search .hint{font-size:13px;color:#0b4a63;opacity:0.9}
+
+  .results-info{font-size:13px;color:#053147;min-width:150px;text-align:right}
+
+  /* music strip */
+  .music{margin-top:12px;border-radius:10px;padding:8px;background:linear-gradient(90deg, rgba(255,255,255,0.6), rgba(235,250,255,0.5));display:flex;gap:12px;align-items:center;border:1px solid rgba(0,0,0,0.04)}
+  .music iframe{height:42px;border:0;border-radius:6px}
+
+  /* grid wrap */
+  .grid-wrap{margin-top:14px;background:linear-gradient(180deg,rgba(255,255,255,0.62),rgba(245,251,255,0.55));padding:14px;border-radius:12px;height:64vh;overflow:auto;border:1px solid rgba(0,0,0,0.04);box-shadow:0 18px 40px rgba(7,30,50,0.06);backdrop-filter:blur(6px)}
+  .grid-wrap::-webkit-scrollbar{width:10px;height:10px}
+  .grid-wrap::-webkit-scrollbar-thumb{background:rgba(30,132,201,0.18);border-radius:10px;border:2px solid transparent;background-clip:padding-box}
+
+  /* link grid - chunky tiles (option 2) */
+  .link-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;align-items:start}
+  .tile{
+    display:flex;gap:12px;align-items:center;padding:16px;border-radius:12px;text-decoration:none;color:var(--text);
+    background:linear-gradient(180deg,rgba(255,255,255,0.78),rgba(246,253,255,0.7));
+    border:1px solid var(--card-border);min-height:78px;box-shadow:0 8px 22px rgba(6,32,60,0.04);transition:transform .25s cubic-bezier(.2,.9,.3,1),box-shadow .25s,background .25s;
+    backdrop-filter: blur(6px);
+  }
+  .tile:hover{transform:translateY(-8px);box-shadow:0 28px 48px rgba(3,27,50,0.12);background:linear-gradient(180deg,rgba(255,255,255,0.9),rgba(248,254,255,0.8))}
+  .icon{width:56px;height:56px;border-radius:10px;flex:0 0 56px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(180deg,#f6fbff,#e6f7ff);border:1px solid rgba(255,255,255,0.6)}
+  .icon img{width:40px;height:40px;object-fit:contain}
+
+  .txt{display:flex;flex-direction:column}
+  .title{font-weight:800;font-size:16px;color:#00334a;margin-bottom:3px}
+  .sub{font-size:13px;color:#164e67;opacity:0.95}
+
+  .note{margin-top:12px;font-size:13px;color:#0b3b53}
+
+  /* animations */
+  @keyframes pop { from{opacity:0; transform:translateY(10px) scale(.995)} to{opacity:1; transform:none} }
+  .pop{animation:pop 420ms cubic-bezier(.2,.9,.3,1) both}
+
+  /* responsive */
+  @media (max-width:720px){
+    .link-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+    .icon{width:48px;height:48px;flex:0 0 48px}
+    .tile{padding:12px;min-height:64px}
+    h1{font-size:18px}
+  }
+
+  /* focus */
+  .tile:focus{outline:3px solid rgba(30,132,201,0.18);outline-offset:4px}
+
+  /* ---------- Lock overlay styles ---------- */
+  .lock-overlay{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:rgba(4,12,20,0.45);backdrop-filter: blur(4px) saturate(110%);z-index:9999;
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .lock-panel{
+    width:min(520px,94%);background:linear-gradient(180deg,rgba(255,255,255,0.95),rgba(245,251,255,0.92));
+    border-radius:12px;padding:22px;border:1px solid rgba(0,0,0,0.06);box-shadow:0 30px 70px rgba(3,20,40,0.38);
+    display:flex;flex-direction:column;gap:12px;align-items:stretch;
+  }
+
+  .lock-header{display:flex;align-items:center;gap:12px;}
+  .lock-logo{width:64px;height:44px;border-radius:8px;background:linear-gradient(180deg,#e8f6ff,#dff3ff);display:flex;align-items:center;justify-content:center;font-weight:800;color:#003a6b}
+  .lock-title{font-size:20px;color:#0c3a52;margin:0;font-weight:800}
+  .lock-desc{font-size:13px;color:#0b4a63;opacity:0.95}
+
+  .pass-row{display:flex;gap:10px;align-items:center;margin-top:6px}
+  .pass-row input{
+    flex:1;padding:12px 14px;border-radius:10px;border:1px solid rgba(0,0,0,0.08);font-size:16px;outline:none;
+    box-shadow: inset 0 -6px 12px rgba(0,0,0,0.02);background:white;
+  }
+  .pass-row button{
+    padding:10px 14px;border-radius:10px;border:0;background:linear-gradient(180deg,var(--accent),var(--accent-2));color:white;font-weight:700;cursor:pointer;
+    box-shadow:0 8px 20px rgba(30,132,201,0.18);
+  }
+
+  .err{color:#8b1c1c;background:rgba(139,28,28,0.06);padding:8px;border-radius:8px;border:1px solid rgba(139,28,28,0.08);display:none}
+
+  .lock-hint{font-size:13px;color:#0b4a63;opacity:0.9}
+
+  /* tiny accessibility focus */
+  .pass-row input:focus{outline:3px solid rgba(30,132,201,0.14);outline-offset:3px}
+  .pass-row button:focus{outline:3px solid rgba(30,132,201,0.14);outline-offset:3px}
 </style>
 </head>
-<body>
+<body class="locked">
+  <!-- Lock overlay: pops up before accessing the site -->
+  <div class="lock-overlay" id="lockOverlay" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
+    <div class="lock-panel" role="document">
+      <div class="lock-header">
+        <div class="lock-logo" aria-hidden="true">GALLERY</div>
+        <div>
+          <h2 id="lockTitle" class="lock-title">Enter access code</h2>
+          <div class="lock-desc">This page is protected. Enter the 4-digit code to continue.</div>
+        </div>
+      </div>
 
-<h1>The Game Gallery</h1>
-<h2>Some links may be blocked, that is your networks filtering options. as well some sites may be broken/taken down. Let me know or <a href="https://github.com/Red404441/Games-gallery-">Contribute</a> yourself</h2>
-<iframe style="border: 0; width: 100%; height: 42px;" src="https://bandcamp.com/EmbeddedPlayer/album=909594336/size=small/bgcol=ffffff/linkcol=63b2cc/transparent=true/" seamless><a href="https://catsystemcorp.bandcamp.com/album/palm-mall">Palm Mall by 猫 シ Corp.</a></iframe>
+      <div class="lock-hint">Tip: the code is numeric. Press Enter after typing.</div>
 
-<div style="height: 80vh; overflow-y: auto;">
-  <div class="link-grid" id="all-links-grid"></div>
-</div>
-    
+      <div class="pass-row" style="margin-top:6px;">
+        <input id="passInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="10" autocomplete="one-time-code" aria-label="Access code" placeholder="Enter code"/>
+        <button id="passBtn" aria-label="Unlock">Unlock</button>
+      </div>
+
+      <div id="errMsg" class="err" role="status" aria-live="polite">Incorrect code — try again.</div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+        <div style="font-size:12px;color:#0b4a63;opacity:0.9">You can press / to focus the search after unlocking.</div>
+        <div style="font-size:12px;color:#0b4a63;opacity:0.9">Session unlock remembered for this tab.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container" role="main" aria-hidden="false">
+    <header>
+      <div class="logo" aria-hidden="true">GALLERY</div>
+      <div>
+        <h1>The Game Gallery</h1>
+        <div class="meta">Frutiger Aero / XP-inspired — everything opens in a new tab.</div>
+      </div>
+
+      <div class="top-right">
+        <a class="contribute" href="https://github.com/Red404441/Games-gallery-" target="_blank" rel="noopener">Contribute</a>
+      </div>
+    </header>
+
+    <div class="search-row" style="margin-bottom:6px">
+      <div class="search" role="search" aria-label="Search links">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 21l-4.35-4.35" stroke="#0b4a63" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="11" r="6" stroke="#0b4a63" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <input id="searchInput" placeholder="find a game..." aria-label="Find a game" autocomplete="off"/>
+        <div class="hint" style="opacity:0.9">Enjoy:)</div>
+      </div>
+      <div class="results-info" id="resultsInfo">119 links</div>
+    </div>
+
+    <div class="music" aria-hidden="false">
+      <iframe src="https://bandcamp.com/EmbeddedPlayer/album=909594336/size=small/bgcol=ffffff/linkcol=63b2cc/transparent=true/" seamless title="Palm Mall - Music"></iframe>
+      <div style="font-size:13px;color:#07354b;">Palm Mall — if audio doesn't play your network may block embeds.</div>
+    </div>
+
+    <div class="grid-wrap" id="gridWrap" aria-live="polite">
+      <div class="link-grid" id="linkGrid" aria-label="All links"></div>
+    </div>
+
+    <div class="note">Note: some links may be blocked by network filters or taken down. Tell me which ones break and I’ll help replace or mirror them.</div>
+  </div>
+
 <script>
-// To add a new link simply use this template:{name: "Site Name", url: "https://example.com"},
-// Example: {name: "Google", url: "https://google.com"},
-// ALL LINKS LISTED AS OBJECTS
+/* === Links (119 total) - DO NOT REMOVE OR REORDER unless you intentionally want to swap === */
 const allLinks = [
     {name:"Win10 Games Hub", url:"https://win10.webjeet.me/"},
     {name:"Diep.io", url:"https://diep.io/"},
@@ -189,31 +325,174 @@ const allLinks = [
     {name:"UG17 Games2", url:"https://ug17.github.io/"},
     {name:"AzGames.io", url:"https://azgames.io/?gid=S50"},
     {name:"Uptoplay.net", url:"https://uptoplay.net/"},
-    {name: "Mario 64 Online", url: "https://red404441.github.io/Mario64-online/"},
-    {name: "Google", url: "https://google.com"},
+    {name:"Mario 64 Online", url:"https://red404441.github.io/Mario64-online/"},
 ];
 
-function renderLinks(links, containerId){
-    const grid = document.getElementById(containerId);
-    links.forEach((link,index)=>{
-        const a = document.createElement('a');
-        a.href = link.url;
-        a.target="_blank";
-        a.className = 'link-item animated';
-        a.style.animationDelay = `${index*0.01}s`; // subtle stagger
-        const img = document.createElement('img');
-        img.src = `https://www.google.com/s2/favicons?domain=${link.url}`;
-        img.alt = link.name;
-        const span = document.createElement('span');
-        span.textContent = link.name;
-        a.appendChild(img);
-        a.appendChild(span);
-        grid.appendChild(a);
-    });
+/* helper: safe favicon source */
+function favUrl(u){
+  try{
+    const p = new URL(u);
+    return `https://www.google.com/s2/favicons?domain=${p.hostname}&sz=64`;
+  }catch(e){
+    return '';
+  }
 }
 
-renderLinks(allLinks, 'all-links-grid');
-</script>
+/* Render tiles */
+const grid = document.getElementById('linkGrid');
+function render(list){
+  grid.innerHTML = '';
+  list.forEach((l,i)=>{
+    const a = document.createElement('a');
+    a.className = 'tile pop';
+    a.href = l.url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.setAttribute('aria-label', l.name);
 
+    const ic = document.createElement('div'); ic.className = 'icon';
+    const im = document.createElement('img'); im.alt = l.name + ' icon';
+    im.src = favUrl(l.url);
+    im.onerror = function(){ this.onerror=null; this.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width=\"64\" height=\"64\"><rect width=\"100%\" height=\"100%\" fill=\"%23eaf6ff\"/></svg>'; };
+    ic.appendChild(im);
+
+    const t = document.createElement('div'); t.className = 'txt';
+    const title = document.createElement('div'); title.className='title'; title.textContent = l.name;
+    const sub = document.createElement('div'); sub.className='sub'; try{sub.textContent = (new URL(l.url)).hostname.replace('www.',''); }catch(e){ sub.textContent=l.url; }
+    t.appendChild(title); t.appendChild(sub);
+
+    a.appendChild(ic); a.appendChild(t);
+    grid.appendChild(a);
+  });
+
+  Array.from(grid.querySelectorAll('.tile')).forEach(el => el.tabIndex = 0);
+  document.getElementById('resultsInfo').textContent = `${list.length} links`;
+}
+
+/* initial render (all) */
+render(allLinks);
+
+/* search behaviour: match visible text only (title), case-insensitive */
+const searchInput = document.getElementById('searchInput');
+searchInput.addEventListener('input', onSearch);
+function onSearch(){
+  const q = searchInput.value.trim().toLowerCase();
+  if(q === ''){
+    render(allLinks);
+    return;
+  }
+  const filtered = allLinks.filter(l => l.name.toLowerCase().includes(q));
+  render(filtered);
+}
+
+/* quick focus shortcut: press / to focus search (like many launchers) */
+document.addEventListener('keydown', (e) => {
+  if(e.key === '/' && document.activeElement !== searchInput){
+    e.preventDefault();
+    searchInput.focus();
+    searchInput.select();
+  }
+});
+
+/* Optional: keyboard navigation inside grid (arrows) */
+(function arrowNav(){
+  const gridEl = document.getElementById('linkGrid');
+  gridEl.addEventListener('keydown', function(e){
+    const items = Array.from(gridEl.querySelectorAll('.tile'));
+    const idx = items.indexOf(document.activeElement);
+    if(idx === -1) return;
+    const cols = Math.max(1, Math.round(gridEl.clientWidth / 240));
+    if(e.key === 'ArrowRight'){ e.preventDefault(); items[Math.min(idx+1, items.length-1)].focus(); }
+    if(e.key === 'ArrowLeft'){ e.preventDefault(); items[Math.max(idx-1, 0)].focus(); }
+    if(e.key === 'ArrowDown'){ e.preventDefault(); items[Math.min(idx+cols, items.length-1)].focus(); }
+    if(e.key === 'ArrowUp'){ e.preventDefault(); items[Math.max(idx-cols, 0)].focus(); }
+  });
+})();
+
+/* -------------- Lock overlay logic -------------- */
+const LOCK_CODE = '4589';
+const overlay = document.getElementById('lockOverlay');
+const passInput = document.getElementById('passInput');
+const passBtn = document.getElementById('passBtn');
+const errMsg = document.getElementById('errMsg');
+
+function unlock(remember = true){
+  // hide overlay and allow interaction
+  document.body.classList.remove('locked');
+  overlay.style.display = 'none';
+  errMsg.style.display = 'none';
+  // remember for this tab session
+  try{ if(remember) sessionStorage.setItem('gallery_unlocked','1'); }catch(e){}
+  // focus search for convenience
+  setTimeout(()=> {
+    try{ searchInput.focus(); }catch(e){} 
+  }, 40);
+}
+
+function showError(text){
+  errMsg.textContent = text || 'Incorrect code — try again.';
+  errMsg.style.display = 'block';
+  // tiny shake animation
+  overlay.animate([{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}],{duration:260,iterations:1});
+  passInput.focus();
+  passInput.select();
+}
+
+function tryUnlock(){
+  const val = (passInput.value || '').trim();
+  if(val === LOCK_CODE){
+    unlock(true);
+  }else{
+    showError('Incorrect code — try again.');
+  }
+}
+
+/* button and enter handling */
+passBtn.addEventListener('click', tryUnlock);
+passInput.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){ e.preventDefault(); tryUnlock(); }
+  if(e.key === 'Escape'){ e.preventDefault(); passInput.value=''; errMsg.style.display='none'; }
+});
+
+/* On load: check sessionStorage for existing unlock */
+window.addEventListener('load', () => {
+  try{
+    const unlocked = sessionStorage.getItem('gallery_unlocked') === '1';
+    if(unlocked){
+      unlock(false); // already unlocked this tab
+    }else{
+      // ensure overlay visible and focus input
+      document.body.classList.add('locked');
+      overlay.style.display = 'flex';
+      passInput.focus();
+      passInput.select();
+    }
+  }catch(e){
+    // fallback: show overlay
+    document.body.classList.add('locked');
+    overlay.style.display = 'flex';
+    passInput.focus();
+  }
+});
+
+/* Prevent focusing underlying elements while locked */
+document.addEventListener('focusin', (e) => {
+  if(document.body.classList.contains('locked')){
+    if(!overlay.contains(e.target)){
+      e.stopPropagation();
+      passInput.focus();
+    }
+  }
+});
+
+/* Accessibility: announce overlay presence */
+(function announceLock(){
+  const live = document.createElement('div');
+  live.setAttribute('aria-live','polite');
+  live.style.position='absolute'; live.style.left='-9999px';
+  live.textContent = 'This site is protected. Enter code to continue.';
+  document.body.appendChild(live);
+})();
+</script>
 </body>
 </html>
