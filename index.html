@@ -4,188 +4,230 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>File explorer</title>
+<!--
+  Frutiger Aero / modern XP-inspired portal
+  - Put Music.mp3 in same folder
+  - Click the overlay "Continue" to unlock audio (browsers require a user gesture)
+-->
 <style>
   :root{
-    --taskbar-height:48px;
-    --accent:#2d6fb7;
-    --titlebar:#0b63a5;
-    --titlebar-text:#fff;
-    --icon-size:88px;
-    --icon-gap:26px;
-    --desktop-padding:36px;
+    --bg-top:#e9f5ff;
+    --bg-bottom:#e6f1ff;
+    --accent:#1f7fc7;
+    --glass: rgba(255,255,255,0.6);
+    --card-shadow: 0 8px 28px rgba(16,40,80,0.12);
+    --icon-size:96px; /* same size for all icons */
+    --icon-gap:22px;
+    --pad:36px;
+    --ui-radius:12px;
+    --muted: #4b6b86;
   }
+
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
     margin:0;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    user-select:none;
-    background:
-      radial-gradient(circle at 10% 20%, rgba(255,255,255,0.04), rgba(255,255,255,0) 6%),
-      linear-gradient(180deg,#76b9ff 0%, #2b82d1 60%);
-    color:#042036;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    background: linear-gradient(180deg,var(--bg-top), var(--bg-bottom));
+    color:#0b2340;
     overflow:hidden;
   }
 
-  .bliss {
-    position:fixed;
-    inset:0;
+  /* subtle 'aero' curved hill */
+  .backdrop {
+    position:fixed;inset:0;pointer-events:none;
     background:
-      linear-gradient(180deg,#7dbbff 0%, #3a8bd1 50%, #1f6fb1 100%);
+      radial-gradient(circle at 20% 10%, rgba(255,255,255,0.9), rgba(255,255,255,0) 8%),
+      radial-gradient(circle at 80% 90%, rgba(200,235,255,0.6), rgba(200,235,255,0) 18%);
+    mix-blend-mode:soft-light;
     z-index:0;
   }
 
+  /* desktop area */
   .desktop {
     position:relative;
-    height:calc(100vh - var(--taskbar-height));
-    padding:var(--desktop-padding);
+    height:100vh;
+    padding:calc(var(--pad) + 52px) var(--pad) var(--pad) var(--pad);
     display:flex;
     flex-wrap:wrap;
-    align-content:flex-start;
     gap:var(--icon-gap);
+    align-content:flex-start;
     overflow:auto;
+    -webkit-overflow-scrolling:touch;
     z-index:1;
   }
 
-  .titlebar {
+  /* clean title area */
+  header.app-title{
     position:fixed;
     left:50%;
     transform:translateX(-50%);
-    top:14px;
-    width:880px;
-    max-width:calc(100% - 40px);
-    height:40px;
-    background: linear-gradient(#1f68a6, #0c4d83);
-    border-radius:6px;
-    box-shadow:0 6px 18px rgba(0,0,0,0.35);
-    color:var(--titlebar-text);
+    top:18px;
+    z-index:6;
     display:flex;
     align-items:center;
-    padding:0 10px;
-    gap:12px;
-    z-index:4;
-    font-weight:600;
+    gap:14px;
+    padding:10px 14px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.74));
+    border-radius:14px;
+    box-shadow:var(--card-shadow);
+    border:1px solid rgba(18,86,140,0.06);
+    backdrop-filter: blur(6px);
   }
-  .titlebar .logo {
-    width:28px;height:20px;border-radius:2px;background:linear-gradient(#fff,#d9f1ff);
-    display:flex;align-items:center;justify-content:center;color:#0b63a5;font-weight:700;font-size:12px;
-    box-shadow:inset 0 -2px 6px rgba(0,0,0,0.06);
+  .app-title .logo{
+    width:36px;height:36px;border-radius:8px;background:linear-gradient(180deg,#fff,#e8f6ff);
+    display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:800;
+    font-size:14px;box-shadow:inset 0 -4px 12px rgba(0,0,0,0.03);
   }
-  .titlebar .text {font-size:15px; letter-spacing:0.6px}
+  .app-title h1{
+    margin:0;font-size:16px;letter-spacing:0.4px;color:#06324f;font-weight:700;
+  }
+  .app-title p{margin:0;font-size:12px;color:var(--muted)}
 
+  /* ICONS - uniform sizes */
   .icon {
-    width:var(--icon-size);
-    height:124px;
-    text-align:center;
-    color:#0b2f4f;
-    cursor:pointer;
+    width: var(--icon-size);
+    height: 136px;
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:flex-start;
-    transition:transform .09s ease;
+    gap:8px;
+    cursor:pointer;
+    transform-origin:center;
+    transition: transform .18s cubic-bezier(.2,.9,.2,1), filter .18s;
     user-select:none;
   }
-  .icon:active{transform:scale(.98)}
-  .icon .img {
-    width:64px;height:64px;border-radius:6px;
-    background:linear-gradient(180deg,#fff,#e4f3ff);
+  .icon:focus{outline: none; transform: translateY(-6px) scale(1.02); box-shadow: 0 12px 30px rgba(12,38,64,0.08)}
+  .icon:hover{ transform: translateY(-8px) scale(1.03); filter:brightness(1.02) saturate(1.02); }
+
+  .img {
+    width:var(--icon-size);
+    height:var(--icon-size);
+    border-radius:14px;
+    background: linear-gradient(180deg,#ffffff,#e8f9ff);
     display:flex;align-items:center;justify-content:center;
-    font-weight:700;font-size:18px;color:#0b63a5;
-    box-shadow:0 6px 8px rgba(6,20,38,0.18), inset 0 -6px 12px rgba(255,255,255,0.85);
-    margin-bottom:8px;
+    box-shadow: 0 8px 20px rgba(12,38,64,0.08), inset 0 -4px 10px rgba(255,255,255,0.85);
     overflow:hidden;
-    display:flex;
+    transition: transform .28s cubic-bezier(.2,.9,.2,1);
   }
-  .icon .img img{
-    width:64px;height:64px;object-fit:cover;display:block;
+  .img img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+  /* fallback letter badge */
+  .letters {
+    font-weight:800;font-size:20px;color:var(--accent);
+    letter-spacing:1px;
   }
-  .icon label{
-    display:block;
-    font-size:12px;
-    line-height:1.05;
-    max-width:88px;
-    word-wrap:break-word;
+
+  /* labels */
+  .label {
+    width:var(--icon-size);
     text-align:center;
+    font-size:13px;
+    color:#083049;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    font-weight:600;
+    letter-spacing:0.2px;
   }
-  .icon .small-url{font-size:10px;color:rgba(11,47,79,0.7);margin-top:6px}
-
-  .taskbar {
-    position:fixed;
-    bottom:0;
-    left:0;
-    right:0;
-    height:var(--taskbar-height);
-    background:linear-gradient(#e6eef7,#c9e5fb);
-    border-top:2px solid rgba(0,0,0,0.06);
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:6px 10px;
-    z-index:5;
-  }
-  .start-btn{
-    display:flex;align-items:center;gap:10px;padding:6px 12px;border-radius:6px;
-    background:linear-gradient(#ffffff,#dfeefb);
-    box-shadow:inset 0 -2px 0 rgba(0,0,0,0.03);
-    cursor:pointer;
-    font-weight:700;color:#0b63a5;
+  .sub {
+    font-size:11px;color:var(--muted); margin-top:2px; font-weight:500;
   }
 
+  /* entrance animation */
+  .desktop .icon { opacity:0; transform: translateY(8px) scale(.99); }
+  .desktop .icon.enter { animation: popIn .42s forwards cubic-bezier(.2,.9,.2,1); }
+  @keyframes popIn {
+    0%{opacity:0; transform: translateY(8px) scale(.98)}
+    60%{opacity:1; transform: translateY(-6px) scale(1.02)}
+    100%{opacity:1; transform: translateY(0) scale(1)}
+  }
+
+  /* overlay (click to continue) */
   .overlay{
     position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-    background:linear-gradient(rgba(6,18,38,0.55), rgba(6,18,38,0.6));
-    z-index:9;color:white;flex-direction:column;backdrop-filter: blur(3px);
+    background: linear-gradient(180deg, rgba(3,18,34,0.36), rgba(3,18,34,0.28));
+    z-index:9;flex-direction:column;
   }
-  .overlay .box{
-    background:linear-gradient(#ffffff10,#ffffff06);
-    border-radius:10px;padding:26px 30px;text-align:center;border:1px solid rgba(255,255,255,0.06);
-    box-shadow: 0 14px 40px rgba(0,0,0,0.5);
+  .overlay .card{
+    width:360px;max-width:92%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(250,255,255,0.82));
+    border-radius:14px;padding:22px;border:1px solid rgba(8,26,46,0.06);
+    box-shadow: 0 18px 48px rgba(6,22,42,0.18);
+    text-align:center;backdrop-filter: blur(6px);
   }
-  .overlay h1{margin:0 0 8px;font-size:28px}
-  .overlay p{margin:0 0 14px;color:#cce6ff}
-  .btn {
-    background: linear-gradient(#f5fbff,#dff0ff);
-    border-radius:8px;padding:10px 18px;font-weight:700;color:#0b63a5;border:1px solid rgba(0,0,0,0.06);
-    cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.28);
+  .overlay h1{margin:0 0 8px;font-size:20px;color:#04273e}
+  .overlay p{margin:0 0 16px;color:#274a67;font-size:13px}
+
+  .cta {
+    display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border-radius:12px;
+    background:linear-gradient(180deg,#fbffff,#eaf6ff);color:var(--accent);font-weight:800;border:1px solid rgba(14,75,134,0.08);
+    box-shadow:0 10px 28px rgba(16,40,80,0.08);
+    cursor:pointer;font-size:14px;
   }
 
-  @media (max-width:640px){
-    .titlebar{left:8px;transform:none;width:calc(100% - 16px)}
-    .desktop{padding:12px}
-    :root{--icon-size:72px}
+  /* floating music control bottom-right (Option 1) */
+  .music-fab{
+    position:fixed;right:22px;bottom:22px;z-index:8;
+    width:62px;height:62px;border-radius:999px;
+    display:flex;align-items:center;justify-content:center;
+    background: linear-gradient(180deg,#ffffff,#e9f8ff);
+    box-shadow: 0 18px 42px rgba(6,20,40,0.14);
+    border:1px solid rgba(12,66,120,0.06);
+    cursor:pointer;
+    transition: transform .12s ease, box-shadow .12s;
+  }
+  .music-fab:hover{ transform: translateY(-6px); box-shadow: 0 24px 48px rgba(6,20,40,0.18) }
+  .music-fab .icon-inner{ font-weight:900; color:var(--accent); font-size:20px; }
+
+  /* accessibility focus */
+  .music-fab:focus{outline:3px solid rgba(31,127,199,0.14); outline-offset:4px}
+
+  /* responsive tweaks */
+  @media (max-width:760px){
+    :root{ --icon-size:82px; --pad:18px }
+    .label{font-size:12px}
+    .app-title{padding:8px 10px}
+    .music-fab{right:14px; bottom:14px; width:54px;height:54px}
   }
 </style>
 </head>
 <body>
-  <div class="bliss"></div>
+  <div class="backdrop"></div>
 
-  <div class="titlebar" aria-hidden="false">
+  <header class="app-title" aria-hidden="false">
     <div class="logo">XP</div>
-    <div class="text">File explorer</div>
-  </div>
+    <div>
+      <h1>File explorer</h1>
+      <p>Retro portal — Frutiger Aero</p>
+    </div>
+  </header>
 
-  <div id="desktop" class="desktop" role="list" aria-label="Desktop icons">
-    <!-- icons injected by JS -->
-  </div>
+  <main id="desktop" class="desktop" role="list" aria-label="Desktop icons">
+    <!-- icons inserted here -->
+  </main>
 
-  <div class="taskbar" aria-hidden="false">
-    <div class="start-btn" title="Start">Start ▾</div>
-    <div style="flex:1"></div>
-    <div style="font-size:12px;color:#0b3c63">Windows XP • Retro Portal</div>
-  </div>
-
-  <div id="overlay" class="overlay" aria-hidden="false">
-    <div class="box">
+  <!-- overlay to get user gesture for audio -->
+  <div id="overlay" class="overlay" role="dialog" aria-modal="true">
+    <div class="card" role="document">
       <h1>Click to continue</h1>
-      <p>Welcome. Click continue to unlock audio and start browsing.</p>
-      <button id="continueBtn" class="btn">Continue</button>
+      <p>Welcome — click continue to unlock audio and enter the portal.</p>
+      <button id="continueBtn" class="cta" aria-label="Continue to site">Continue ▸</button>
     </div>
   </div>
 
+  <!-- audio: Music.mp3 must be in same folder -->
   <audio id="bgAudio" src="Music.mp3" preload="auto" loop></audio>
 
+  <!-- floating play/pause control -->
+  <button id="musicFab" class="music-fab" aria-pressed="false" title="Play / Pause (Music)">
+    <span class="icon-inner" id="fabIcon">▶</span>
+  </button>
+
 <script>
+/* ========== Raw link paste (provided by user). The script tolerantly parses and normalizes them. ========== */
 const raw = `Games:
 https://win10.webjeet.me/https://www.pcjs.org/blog/2015/09/21/GAMES Diep.io Agar.io Classic games online ZombsRoyale.io Holeo Wings.io  Jopi.io  Deeeep.io Dino.io Monste.io Brutal.io  Paper.io QuickDraw  Maths playground  Slither.io Yorg.io Vengeance.io Warbot.io Garlic.io Snake.io Card games.io Symboloo.com Zombs.io Hordes.io Chess.com Deftly.io GeForce.com Kour.io  https://neal.fun/ https://quickdraw.withgoogle.com/ httpsqu//hole-io.com/ https://hole-io.com/ https://deadshot.io/ https://oasis.decart.ai/starting-point?journey=Dense+Forest https://bitlifeonline.io/home https://en.akinator.com/ https://armorgames.com/ https://www.freegames.com/ https://lagged.com/en/ https://www.gamepix.com/ https://www.mathplayground.com/fun-skill-games.html https://jetpack-joyride.github.io/ https://www.pogo.com/ https://www.gamezop.com/en https://www.jopi.com/ https://poki.ac/ https://www.friv2online.com/poki-games https://koalabeast.com/ https://www.lexaloffle.com/bbs/?pid=136646#playing https://www.fallenlondon.com/ https://granbluefantasy.jp/sp/en/ https://corru.observer/ https://amongusplay.online/ https://narrow.one/    Poki 2 - Play Poki 2 Online at Friv Games Play Free Games Online - No Download Fun Games to Play! Cool Math Games - Free Online Games for Learning and Fun Territorial.io Play 100% Free Games | Instant & Online | FreeGames.org
 https://emupedia.net/beta/emuos/ (needs keyboard and mouse)
@@ -251,8 +293,10 @@ https://azgames.io/?gid=S50
 Uptoplay.net
 `;
 
+/* ---------- tolerant parsing for messy paste ---------- */
 function tidyAndSplit(text){
   text = text.replace(/\u2028|\u2029|\u00A0/g,' ').replace(/\u200B/g,'').replace(/\r/g,'\n');
+  // pull out things that look like http(s)
   text = text.replace(/(https?:\/\/[^\s]+)/g, '\n$1\n');
   text = text.replace(/[\u2028\u2029\u202f\u200b\uFEFF]/g,'\n');
   const lines = text.split(/\n+/).map(s=>s.trim()).filter(Boolean);
@@ -275,19 +319,20 @@ function tidyAndSplit(text){
       out.push(q);
     })
   });
+  // dedupe while preserving order
   const seen = new Set();
   return out.filter(u=>{ if(seen.has(u)) return false; seen.add(u); return true; });
 }
 
 const links = tidyAndSplit(raw);
 
+/* ---------- build desktop icons with native favicon fetch + letter fallback ---------- */
 const desktop = document.getElementById('desktop');
 
 function hostnameFromUrl(u){
   try{ return (new URL(u)).hostname.replace(/^www\./i,''); }
   catch(e){ return u; }
 }
-
 function shortLabelFor(url){
   try{
     const host = hostnameFromUrl(url);
@@ -296,20 +341,19 @@ function shortLabelFor(url){
     return 'WWW';
   }
 }
-
 function friendlyName(url){
   try{
     const u = new URL(url);
     const host = u.hostname.replace(/^www\./i,'');
     const path = u.pathname.replace(/\/$/,'');
-    if(path && path !== '/') return host + ' — ' + path.split('/').pop();
+    if(path && path !== '/') return host + ' • ' + path.split('/').pop();
     return host;
   }catch(e){
     return url;
   }
 }
 
-function buildIcon(url, idx){
+function createIcon(url, idx){
   const wrap = document.createElement('div');
   wrap.className = 'icon';
   wrap.dataset.url = url;
@@ -318,105 +362,151 @@ function buildIcon(url, idx){
   const imgWrap = document.createElement('div');
   imgWrap.className = 'img';
 
-  // placeholder letters fallback (A = chosen fallback)
-  const lettersNode = document.createElement('div');
-  lettersNode.style.width = '64px';
-  lettersNode.style.height = '64px';
-  lettersNode.style.display = 'flex';
-  lettersNode.style.alignItems = 'center';
-  lettersNode.style.justifyContent = 'center';
-  lettersNode.style.fontWeight = '700';
-  lettersNode.style.fontSize = '18px';
-  lettersNode.style.color = '#0b63a5';
-  lettersNode.textContent = shortLabelFor(url);
+  // letter fallback
+  const letters = document.createElement('div');
+  letters.className = 'letters';
+  letters.textContent = shortLabelFor(url);
+  imgWrap.appendChild(letters);
 
-  imgWrap.appendChild(lettersNode);
-
-  // attempt to load native favicon
+  // try load native favicon (square) from site root
   const host = hostnameFromUrl(url);
   if(host){
     const fav = new Image();
     fav.crossOrigin = 'anonymous';
     fav.onload = function(){
-      // replace letters with the favicon image
+      // replace contents with the favicon image
       imgWrap.innerHTML = '';
-      fav.width = 64;
-      fav.height = 64;
-      fav.style.width = '64px';
-      fav.style.height = '64px';
+      fav.width = fav.height = 200;
+      fav.style.width = '100%';
+      fav.style.height = '100%';
       fav.style.objectFit = 'cover';
+      fav.style.display = 'block';
       imgWrap.appendChild(fav);
     };
     fav.onerror = function(){
-      // leave fallback letters in place if favicon fails
+      // keep letter fallback
     };
-    // try primary location
+    // attempt common paths: /favicon.ico and /favicon.png
+    // try favicon.ico first, then .png fallback by changing src after short delay if fails
     fav.src = 'https://' + host + '/favicon.ico';
-    // also set a timeout fallback in case servers hang (safety)
-    setTimeout(()=>{ if(!fav.complete){ /* no-op, let onerror handle if it fails */ } }, 2500);
+    // If it doesn't load after a bit, try png variant
+    setTimeout(()=>{ if(!fav.complete){ try { fav.src = 'https://' + host + '/favicon.png'; } catch(e){} } }, 900);
   }
 
-  const label = document.createElement('label');
+  const label = document.createElement('div');
+  label.className = 'label';
   label.textContent = friendlyName(url);
-  const small = document.createElement('div');
-  small.className = 'small-url';
-  small.textContent = url.replace(/^https?:\/\//,'').slice(0,36);
+
+  const sub = document.createElement('div');
+  sub.className = 'sub';
+  sub.textContent = url.replace(/^https?:\/\//,'').slice(0,36);
 
   wrap.appendChild(imgWrap);
   wrap.appendChild(label);
-  wrap.appendChild(small);
+  wrap.appendChild(sub);
 
+  /* open in new tab on click */
   wrap.addEventListener('click', (e)=>{
     e.preventDefault();
-    window.open(url, '_blank');
+    window.open(url,'_blank');
   });
-
   wrap.addEventListener('keydown', (e)=>{
     if(e.key === 'Enter') window.open(url,'_blank');
   });
 
+  // slight staggered entrance
+  setTimeout(()=>{ wrap.classList.add('enter'); }, idx * 28);
+
   return wrap;
 }
 
+/* create icons */
 links.forEach((u,i)=>{
   try{
-    const icon = buildIcon(u,i);
-    desktop.appendChild(icon);
+    const node = createIcon(u,i);
+    desktop.appendChild(node);
   }catch(e){
-    console.warn('bad url', u, e);
+    console.warn('skip', u, e);
   }
 });
 
-// overlay/audio logic
+/* ========== Audio / music controls ========== */
 const overlay = document.getElementById('overlay');
 const continueBtn = document.getElementById('continueBtn');
 const audio = document.getElementById('bgAudio');
+const musicFab = document.getElementById('musicFab');
+const fabIcon = document.getElementById('fabIcon');
 
+let isPlaying = false;
+
+/* helper to update fab appearance */
+function updateFab(){
+  musicFab.setAttribute('aria-pressed', String(isPlaying));
+  fabIcon.textContent = isPlaying ? '⏸' : '▶';
+}
+
+/* start audio on continue */
 continueBtn.addEventListener('click', async ()=>{
   overlay.style.display = 'none';
-  try {
+  try{
     audio.currentTime = 0;
     await audio.play();
+    isPlaying = true;
+    updateFab();
   }catch(err){
-    console.warn('audio play blocked', err);
+    // if browser still blocks, show paused state but overlay removed
+    console.warn('audio play blocked:', err);
+    isPlaying = false;
+    updateFab();
   }
 });
-overlay.addEventListener('click', (e)=>{
-  if(e.target === overlay) continueBtn.click();
-});
 
-// small helper: allow pressing Enter or Space on overlay to continue
+/* keyboard accessibility for overlay */
 overlay.addEventListener('keydown', (e)=>{
   if(e.key === 'Enter' || e.key === ' ') continueBtn.click();
 });
-overlay.tabIndex = 0;
+overlay.focus();
 
-// console info
-console.log('Loaded', links.length, 'links. Place Music.mp3 next to this file.');
+/* fab toggles play/pause */
+musicFab.addEventListener('click', async (e)=>{
+  e.stopPropagation();
+  if(!audio.src){
+    console.warn('No audio source found (Music.mp3).');
+    return;
+  }
+  if(isPlaying){
+    audio.pause();
+    isPlaying = false;
+    updateFab();
+  } else {
+    try{
+      await audio.play();
+      isPlaying = true;
+      updateFab();
+    }catch(err){
+      console.warn('play failed', err);
+    }
+  }
+});
 
-// quick accessibility: focus overlay button when loaded
+/* ensure UI reflects actual audio state */
+audio.addEventListener('play', ()=>{ isPlaying = true; updateFab(); });
+audio.addEventListener('pause', ()=>{ isPlaying = false; updateFab(); });
+audio.addEventListener('ended', ()=>{ isPlaying = false; updateFab(); });
+
+/* keep playing when user opens links in new tab — this normally persists.
+   If playback is interrupted by autoplay policies, the overlay gesture should have fixed it. */
+
+/* final accessibility nicety: allow Space/Enter to toggle fab when focused */
+musicFab.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); musicFab.click(); }
+});
+
+/* focus the overlay's button on load for keyboard users */
 window.addEventListener('load', ()=>{ try{ continueBtn.focus(); }catch(e){} });
 
+/* console debug */
+console.log('Frutiger-Aero portal loaded —', links.length, 'links. Place Music.mp3 beside this file.');
 </script>
 </body>
 </html>
