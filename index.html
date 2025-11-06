@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>File explorer</title>
+<style>
+  :root{
+    --taskbar-height:48px;
+    --accent:#2d6fb7;
+    --titlebar:#0b63a5;
+    --titlebar-text:#fff;
+    --icon-size:88px;
+    --icon-gap:26px;
+    --desktop-padding:36px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    user-select:none;
+    background:
+      radial-gradient(circle at 10% 20%, rgba(255,255,255,0.04), rgba(255,255,255,0) 6%),
+      linear-gradient(180deg,#76b9ff 0%, #2b82d1 60%);
+    color:#042036;
+    overflow:hidden;
+  }
+
+  .bliss {
+    position:fixed;
+    inset:0;
+    background:
+      linear-gradient(180deg,#7dbbff 0%, #3a8bd1 50%, #1f6fb1 100%);
+    z-index:0;
+  }
+
+  .desktop {
+    position:relative;
+    height:calc(100vh - var(--taskbar-height));
+    padding:var(--desktop-padding);
+    display:flex;
+    flex-wrap:wrap;
+    align-content:flex-start;
+    gap:var(--icon-gap);
+    overflow:auto;
+    z-index:1;
+  }
+
+  .titlebar {
+    position:fixed;
+    left:50%;
+    transform:translateX(-50%);
+    top:14px;
+    width:880px;
+    max-width:calc(100% - 40px);
+    height:40px;
+    background: linear-gradient(#1f68a6, #0c4d83);
+    border-radius:6px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.35);
+    color:var(--titlebar-text);
+    display:flex;
+    align-items:center;
+    padding:0 10px;
+    gap:12px;
+    z-index:4;
+    font-weight:600;
+  }
+  .titlebar .logo {
+    width:28px;height:20px;border-radius:2px;background:linear-gradient(#fff,#d9f1ff);
+    display:flex;align-items:center;justify-content:center;color:#0b63a5;font-weight:700;font-size:12px;
+    box-shadow:inset 0 -2px 6px rgba(0,0,0,0.06);
+  }
+  .titlebar .text {font-size:15px; letter-spacing:0.6px}
+
+  .icon {
+    width:var(--icon-size);
+    height:124px;
+    text-align:center;
+    color:#0b2f4f;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    transition:transform .09s ease;
+    user-select:none;
+  }
+  .icon:active{transform:scale(.98)}
+  .icon .img {
+    width:64px;height:64px;border-radius:6px;
+    background:linear-gradient(180deg,#fff,#e4f3ff);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:18px;color:#0b63a5;
+    box-shadow:0 6px 8px rgba(6,20,38,0.18), inset 0 -6px 12px rgba(255,255,255,0.85);
+    margin-bottom:8px;
+    overflow:hidden;
+    display:flex;
+  }
+  .icon .img img{
+    width:64px;height:64px;object-fit:cover;display:block;
+  }
+  .icon label{
+    display:block;
+    font-size:12px;
+    line-height:1.05;
+    max-width:88px;
+    word-wrap:break-word;
+    text-align:center;
+  }
+  .icon .small-url{font-size:10px;color:rgba(11,47,79,0.7);margin-top:6px}
+
+  .taskbar {
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    height:var(--taskbar-height);
+    background:linear-gradient(#e6eef7,#c9e5fb);
+    border-top:2px solid rgba(0,0,0,0.06);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:6px 10px;
+    z-index:5;
+  }
+  .start-btn{
+    display:flex;align-items:center;gap:10px;padding:6px 12px;border-radius:6px;
+    background:linear-gradient(#ffffff,#dfeefb);
+    box-shadow:inset 0 -2px 0 rgba(0,0,0,0.03);
+    cursor:pointer;
+    font-weight:700;color:#0b63a5;
+  }
+
+  .overlay{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(rgba(6,18,38,0.55), rgba(6,18,38,0.6));
+    z-index:9;color:white;flex-direction:column;backdrop-filter: blur(3px);
+  }
+  .overlay .box{
+    background:linear-gradient(#ffffff10,#ffffff06);
+    border-radius:10px;padding:26px 30px;text-align:center;border:1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 14px 40px rgba(0,0,0,0.5);
+  }
+  .overlay h1{margin:0 0 8px;font-size:28px}
+  .overlay p{margin:0 0 14px;color:#cce6ff}
+  .btn {
+    background: linear-gradient(#f5fbff,#dff0ff);
+    border-radius:8px;padding:10px 18px;font-weight:700;color:#0b63a5;border:1px solid rgba(0,0,0,0.06);
+    cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.28);
+  }
+
+  @media (max-width:640px){
+    .titlebar{left:8px;transform:none;width:calc(100% - 16px)}
+    .desktop{padding:12px}
+    :root{--icon-size:72px}
+  }
+</style>
+</head>
+<body>
+  <div class="bliss"></div>
+
+  <div class="titlebar" aria-hidden="false">
+    <div class="logo">XP</div>
+    <div class="text">File explorer</div>
+  </div>
+
+  <div id="desktop" class="desktop" role="list" aria-label="Desktop icons">
+    <!-- icons injected by JS -->
+  </div>
+
+  <div class="taskbar" aria-hidden="false">
+    <div class="start-btn" title="Start">Start ▾</div>
+    <div style="flex:1"></div>
+    <div style="font-size:12px;color:#0b3c63">Windows XP • Retro Portal</div>
+  </div>
+
+  <div id="overlay" class="overlay" aria-hidden="false">
+    <div class="box">
+      <h1>Click to continue</h1>
+      <p>Welcome. Click continue to unlock audio and start browsing.</p>
+      <button id="continueBtn" class="btn">Continue</button>
+    </div>
+  </div>
+
+  <audio id="bgAudio" src="Music.mp3" preload="auto" loop></audio>
+
+<script>
+const raw = `Games:
+https://win10.webjeet.me/https://www.pcjs.org/blog/2015/09/21/GAMES Diep.io Agar.io Classic games online ZombsRoyale.io Holeo Wings.io  Jopi.io  Deeeep.io Dino.io Monste.io Brutal.io  Paper.io QuickDraw  Maths playground  Slither.io Yorg.io Vengeance.io Warbot.io Garlic.io Snake.io Card games.io Symboloo.com Zombs.io Hordes.io Chess.com Deftly.io GeForce.com Kour.io  https://neal.fun/ https://quickdraw.withgoogle.com/ httpsqu//hole-io.com/ https://hole-io.com/ https://deadshot.io/ https://oasis.decart.ai/starting-point?journey=Dense+Forest https://bitlifeonline.io/home https://en.akinator.com/ https://armorgames.com/ https://www.freegames.com/ https://lagged.com/en/ https://www.gamepix.com/ https://www.mathplayground.com/fun-skill-games.html https://jetpack-joyride.github.io/ https://www.pogo.com/ https://www.gamezop.com/en https://www.jopi.com/ https://poki.ac/ https://www.friv2online.com/poki-games https://koalabeast.com/ https://www.lexaloffle.com/bbs/?pid=136646#playing https://www.fallenlondon.com/ https://granbluefantasy.jp/sp/en/ https://corru.observer/ https://amongusplay.online/ https://narrow.one/    Poki 2 - Play Poki 2 Online at Friv Games Play Free Games Online - No Download Fun Games to Play! Cool Math Games - Free Online Games for Learning and Fun Territorial.io Play 100% Free Games | Instant & Online | FreeGames.org
+https://emupedia.net/beta/emuos/ (needs keyboard and mouse)
+https://www.izzygames.com/exhibit-of-sorrows-t6997.html?fullscreen=true
+https://www.desura.games/ipad-games
+https://kevin.games/slendrina-must-die-the-cellar
+https://www.toogame.com/
+http://v1.windows93.net/
+https://www.kodub.com/apps/polytrack
+https://now.gg/
+https://playretrogames.online/
+https://play3dgame.com/
+https://gamaverse.com/mobile/
+https://www.freeriderhd.com/
+https://kbhgames.com/
+https://www.playemulator.io/games/pokemon-online/
+https://play.pokemonshowdown.com/
+https://drift.io/?room=nedRVhuAq
+https://watchdocumentaries.com/time-shooter-2-game/
+https://venge.io/
+https://www.gameflare.com/online-game/combat-reloaded/
+https://www.lumpty.com/amusements/games/tetris/tetris.html
+https://playclassic.games/games/
+https://arcadespot.com/
+mcraft.fun
+https://www.twoplayergames.org/?_gl=1*17pgihv*_up*MQ..*_ga*MTgzMDExMzg3LjE3MzY4NTIwMzY.*_ga_LSBVFHP4VG*MTczNjg1MjAzNC4xLjEuMTczNjg1MjcyMi4wLjAuMA..
+https://slowroads.io/
+https://sites.google.com/view/games-unblocked/
+https://slice-master.io/
+https://misterfonka.github.io/Unblocked-Cave/games/games.html
+https://basketbrosio.com/
+https://gamesnacks.com/
+https://www.yapigames.com/mobilegames/?utm_source=yapigames.com/421&gad_source=5&gclid=EAIaIQobChMInKfn7Im-iwMVtoVQBh0yixeVEAEYASAAEgIVFvD_BwE
+https://nointernetgame.com/
+https://catmario.eu/
+https://www.pcjs.org/blog/2015/09/21/
+https://lrusso.github.io/VirtualXP/VirtualXP.htm
+https://win10.webjeet.me/
+https://elgoog.im/
+https://myemulator.onl/
+https://archive.org/details/internetarcade
+https://romsfun.com/
+ https://watchdocumentaries.com/games/
+https://www.gameflare.com/
+https://playhop.com/
+https://www.onlinegames.io/survival-race/index.html
+https://www.miniclip.com/
+https://www.cartoonnetwork.co.uk/games
+https://skibidi.io/games
+https://eaglercraft.q13x.com/1.8-js/?retina=true
+https://mathplayzone.com/arcade/
+https://cookieclicker.one/
+https://angusnicneven.com/
+https://pokerogue.io/
+https://tetr.io/
+https://ug17.github.io/
+https://www.mafa.com/
+https://crossy-road.io/
+https://crossy-road.com/
+https://games-site.github.io/
+https://ug17.github.io/
+https://azgames.io/?gid=S50
+Uptoplay.net
+`;
+
+function tidyAndSplit(text){
+  text = text.replace(/\u2028|\u2029|\u00A0/g,' ').replace(/\u200B/g,'').replace(/\r/g,'\n');
+  text = text.replace(/(https?:\/\/[^\s]+)/g, '\n$1\n');
+  text = text.replace(/[\u2028\u2029\u202f\u200b\uFEFF]/g,'\n');
+  const lines = text.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+  const out = [];
+  lines.forEach(l=>{
+    let cleaned = l.replace(/\(.*?\)/g,'').trim();
+    const parts = cleaned.split(/\s+/);
+    parts.forEach(p=>{
+      if(!p) return;
+      let q = p;
+      q = q.replace(/[.,;]+$/,'');
+      q = q.replace(/^httpsqu:\/\//,'https://').replace(/^httpsqu\/\//,'https://');
+      if(!/^https?:\/\//i.test(q)){
+        if(/[a-z0-9\-]+\.[a-z]{2,}/i.test(q)){
+          q = 'https://' + q;
+        } else {
+          return;
+        }
+      }
+      out.push(q);
+    })
+  });
+  const seen = new Set();
+  return out.filter(u=>{ if(seen.has(u)) return false; seen.add(u); return true; });
+}
+
+const links = tidyAndSplit(raw);
+
+const desktop = document.getElementById('desktop');
+
+function hostnameFromUrl(u){
+  try{ return (new URL(u)).hostname.replace(/^www\./i,''); }
+  catch(e){ return u; }
+}
+
+function shortLabelFor(url){
+  try{
+    const host = hostnameFromUrl(url);
+    return host.split('.')[0].slice(0,3).toUpperCase();
+  }catch(e){
+    return 'WWW';
+  }
+}
+
+function friendlyName(url){
+  try{
+    const u = new URL(url);
+    const host = u.hostname.replace(/^www\./i,'');
+    const path = u.pathname.replace(/\/$/,'');
+    if(path && path !== '/') return host + ' — ' + path.split('/').pop();
+    return host;
+  }catch(e){
+    return url;
+  }
+}
+
+function buildIcon(url, idx){
+  const wrap = document.createElement('div');
+  wrap.className = 'icon';
+  wrap.dataset.url = url;
+  wrap.tabIndex = 0;
+
+  const imgWrap = document.createElement('div');
+  imgWrap.className = 'img';
+
+  // placeholder letters fallback (A = chosen fallback)
+  const lettersNode = document.createElement('div');
+  lettersNode.style.width = '64px';
+  lettersNode.style.height = '64px';
+  lettersNode.style.display = 'flex';
+  lettersNode.style.alignItems = 'center';
+  lettersNode.style.justifyContent = 'center';
+  lettersNode.style.fontWeight = '700';
+  lettersNode.style.fontSize = '18px';
+  lettersNode.style.color = '#0b63a5';
+  lettersNode.textContent = shortLabelFor(url);
+
+  imgWrap.appendChild(lettersNode);
+
+  // attempt to load native favicon
+  const host = hostnameFromUrl(url);
+  if(host){
+    const fav = new Image();
+    fav.crossOrigin = 'anonymous';
+    fav.onload = function(){
+      // replace letters with the favicon image
+      imgWrap.innerHTML = '';
+      fav.width = 64;
+      fav.height = 64;
+      fav.style.width = '64px';
+      fav.style.height = '64px';
+      fav.style.objectFit = 'cover';
+      imgWrap.appendChild(fav);
+    };
+    fav.onerror = function(){
+      // leave fallback letters in place if favicon fails
+    };
+    // try primary location
+    fav.src = 'https://' + host + '/favicon.ico';
+    // also set a timeout fallback in case servers hang (safety)
+    setTimeout(()=>{ if(!fav.complete){ /* no-op, let onerror handle if it fails */ } }, 2500);
+  }
+
+  const label = document.createElement('label');
+  label.textContent = friendlyName(url);
+  const small = document.createElement('div');
+  small.className = 'small-url';
+  small.textContent = url.replace(/^https?:\/\//,'').slice(0,36);
+
+  wrap.appendChild(imgWrap);
+  wrap.appendChild(label);
+  wrap.appendChild(small);
+
+  wrap.addEventListener('click', (e)=>{
+    e.preventDefault();
+    window.open(url, '_blank');
+  });
+
+  wrap.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') window.open(url,'_blank');
+  });
+
+  return wrap;
+}
+
+links.forEach((u,i)=>{
+  try{
+    const icon = buildIcon(u,i);
+    desktop.appendChild(icon);
+  }catch(e){
+    console.warn('bad url', u, e);
+  }
+});
+
+// overlay/audio logic
+const overlay = document.getElementById('overlay');
+const continueBtn = document.getElementById('continueBtn');
+const audio = document.getElementById('bgAudio');
+
+continueBtn.addEventListener('click', async ()=>{
+  overlay.style.display = 'none';
+  try {
+    audio.currentTime = 0;
+    await audio.play();
+  }catch(err){
+    console.warn('audio play blocked', err);
+  }
+});
+overlay.addEventListener('click', (e)=>{
+  if(e.target === overlay) continueBtn.click();
+});
+
+// small helper: allow pressing Enter or Space on overlay to continue
+overlay.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter' || e.key === ' ') continueBtn.click();
+});
+overlay.tabIndex = 0;
+
+// console info
+console.log('Loaded', links.length, 'links. Place Music.mp3 next to this file.');
+
+// quick accessibility: focus overlay button when loaded
+window.addEventListener('load', ()=>{ try{ continueBtn.focus(); }catch(e){} });
+
+</script>
+</body>
+</html>
