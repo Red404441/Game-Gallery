@@ -1,684 +1,1794 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>cjFallons Ebooks Reader</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>CjFallons Ebook Reader</title>
+
+<!-- =====================================================================
+  PWA MANIFEST (inline for single-file deployment)
+  To use: save this file as index.html in your repo root.
+  Add a 192x192 and 512x512 icon.png to your repo for full PWA support.
+====================================================================== -->
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#6ec6f5"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="description" content="A curated gallery of browser games — Frutiger Aero Edition"/>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
 <style>
-  :root{
-    --accent:#1e84c9;
-    --accent-2:#63b2cc;
-    --card-border: rgba(30,132,201,0.14);
-    --text:#043347;
-    --glass: rgba(255,255,255,0.72);
-  }
+/* ======================================================================
+   DESIGN TOKENS — edit these to retheme the entire site
+   ====================================================================== */
+:root {
+  /* Sky palette */
+  --sky-top: #6ec6f5;
+  --sky-mid: #b8e0f7;
+  --sky-low: #dff2fd;
 
-  /* Background: Bliss wallpaper (Microsoft-hosted preferred).
-     Fallback gradient provided. */
-  :root { --bliss-url: url("https://upload.wikimedia.org/wikipedia/en/2/27/Bliss_%28Windows_XP%29.png"); }
+  /* Glass */
+  --glass-bg:     rgba(255,255,255,0.62);
+  --glass-border: rgba(255,255,255,0.78);
+  --glass-shadow: rgba(0,60,120,0.10);
 
-  html,body{height:100%;margin:0;font-family: "Segoe UI", Tahoma, Arial, sans-serif;color:var(--text);-webkit-font-smoothing:antialiased;}
-  body{
-    background:
-      linear-gradient(180deg, rgba(255,255,255,0.25), rgba(240,252,255,0.45)),
-      var(--bliss-url),
-      linear-gradient(180deg,#c9e0f7,#eef7fe);
-    background-size: cover;
-    background-position: center;
-    padding:20px;
-  }
+  /* Accent */
+  --accent:      #0e7fcc;
+  --accent-2:    #46c4e3;
+  --accent-glow: rgba(14,127,204,0.22);
 
-  /* When locked, blur the main content behind overlay */
-  body.locked .container{ filter: blur(6px) saturate(110%); pointer-events: none; user-select: none; }
-  body.locked { overflow: hidden; } /* prevent scroll while locked */
+  /* Text */
+  --text:      #042a3c;
+  --text-mid:  #185470;
+  --text-soft: #3a7a99;
 
-  .container{
-    max-width:1200px;margin:0 auto;background:rgba(255,255,255,0.55);border-radius:12px;padding:14px;
-    box-shadow: 0 20px 50px rgba(6,30,50,0.12);backdrop-filter: blur(6px) saturate(120%);border:1px solid rgba(255,255,255,0.6);
-  }
+  /* Semantic */
+  --danger:  #c0392b;
+  --success: #0a9e6e;
+  --warning: #d4870a;
 
-  header{display:flex;gap:12px;align-items:center;}
-  .logo{
-    width:84px;height:56px;border-radius:8px;background:linear-gradient(180deg,#e8f6ff,#dff3ff);
-    display:flex;align-items:center;justify-content:center;font-weight:800;color:#003a6b;font-size:15px;
-    box-shadow: 0 8px 18px rgba(6,32,60,0.06);border:1px solid rgba(0,0,0,0.04)
-  }
-  h1{margin:0;font-size:22px;color:#00334a;letter-spacing:-0.4px}
-  .meta{font-size:13px;color:#09334a;opacity:0.95}
+  /* Favourites star */
+  --star-active: #f5a623;
 
-  .top-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+  /* Shape */
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-sm:  8px;
 
-  a.contribute{background:linear-gradient(180deg,var(--accent),var(--accent-2));color:white;padding:7px 12px;border-radius:8px;text-decoration:none;font-weight:700;box-shadow:0 8px 22px rgba(98,154,200,0.16)}
+  /* Typography */
+  --font-display: 'Unbounded', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
 
-  /* audio bubble (aero glass bubble) */
-  .audio-bubble{
-    width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(235,249,255,0.85));
-    box-shadow: 0 6px 18px rgba(5,40,70,0.12), inset 0 1px 0 rgba(255,255,255,0.6);
-    border:1px solid rgba(255,255,255,0.6);
-    cursor:pointer;
-    transition: transform .12s ease, box-shadow .12s ease, opacity .12s;
-    -webkit-backdrop-filter: blur(6px) saturate(120%);
-  }
-  .audio-bubble:active{ transform: translateY(1px) scale(.995); }
-  .audio-bubble[aria-pressed="true"]{ box-shadow:0 10px 26px rgba(6,40,80,0.14); transform: translateY(-2px); }
-  .audio-icon{ width:18px;height:18px;display:block;pointer-events:none; }
+  /* Motion */
+  --ease: .28s cubic-bezier(.2,.9,.3,1);
 
-  /* search bar */
-  .search-row{display:flex;gap:12px;align-items:center;margin-top:14px;}
-  .search{
-    flex:1;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.8);border-radius:12px;padding:10px 12px;border:1px solid rgba(0,0,0,0.06);
-    box-shadow: 0 8px 18px rgba(6,32,60,0.04);
-  }
-  .search input{
-    border:0;outline:none;font-size:16px;background:transparent;width:100%;
-    color:var(--text);
-  }
-  .search .hint{font-size:13px;color:#0b4a63;opacity:0.9}
+  /* Layout */
+  --grid-min: 200px;   /* min tile width — increase for larger tiles */
+  --grid-gap:  12px;
+}
 
-  .results-info{font-size:13px;color:#053147;min-width:150px;text-align:right}
+/* ── Dark theme overrides ── */
+[data-theme="dark"] {
+  --sky-top: #0a1628;
+  --sky-mid: #0d1f38;
+  --sky-low: #0f2440;
+  --glass-bg:     rgba(12,28,52,0.72);
+  --glass-border: rgba(255,255,255,0.08);
+  --glass-shadow: rgba(0,0,0,0.30);
+  --text:      #d8eeff;
+  --text-mid:  #7ec4e8;
+  --text-soft: #4a8aaa;
+  --accent:    #38aee8;
+  --accent-2:  #56d4f5;
+  --accent-glow: rgba(56,174,232,0.22);
+}
 
-  /* grid wrap */
-  .grid-wrap{margin-top:14px;background:linear-gradient(180deg,rgba(255,255,255,0.62),rgba(245,251,255,0.55));padding:14px;border-radius:12px;height:64vh;overflow:auto;border:1px solid rgba(0,0,0,0.04);box-shadow:0 18px 40px rgba(7,30,50,0.06);backdrop-filter:blur(6px)}
-  .grid-wrap::-webkit-scrollbar{width:10px;height:10px}
-  .grid-wrap::-webkit-scrollbar-thumb{background:rgba(30,132,201,0.18);border-radius:10px;border:2px solid transparent;background-clip:padding-box}
+/* ── Compact view ── */
+[data-compact="true"] { --grid-min: 150px; --grid-gap: 8px; }
 
-  /* link grid - chunky tiles (option 2) */
-  .link-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;align-items:start}
-  .tile{
-    display:flex;gap:12px;align-items:center;padding:16px;border-radius:12px;text-decoration:none;color:var(--text);
-    background:linear-gradient(180deg,rgba(255,255,255,0.78),rgba(246,253,255,0.7));
-    border:1px solid var(--card-border);min-height:78px;box-shadow:0 8px 22px rgba(6,32,60,0.04);transition:transform .25s cubic-bezier(.2,.9,.3,1),box-shadow .25s,background .25s;
-    backdrop-filter: blur(6px);
-  }
-  .tile:hover{transform:translateY(-8px);box-shadow:0 28px 48px rgba(3,27,50,0.12);background:linear-gradient(180deg,rgba(255,255,255,0.9),rgba(248,254,255,0.8))}
-  .icon{width:56px;height:56px;border-radius:10px;flex:0 0 56px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(180deg,#f6fbff,#e6f7ff);border:1px solid rgba(255,255,255,0.6)}
-  .icon img{width:40px;height:40px;object-fit:contain}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  .txt{display:flex;flex-direction:column}
-  .title{font-weight:800;font-size:16px;color:#00334a;margin-bottom:3px}
-  .sub{font-size:13px;color:#164e67;opacity:0.95}
+html, body {
+  min-height: 100%;
+  font-family: var(--font-body);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  transition: color .3s, background .3s;
+}
 
-  .note{margin-top:12px;font-size:13px;color:#0b3b53}
+body {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
+    linear-gradient(175deg, var(--sky-top) 0%, var(--sky-mid) 40%, var(--sky-low) 75%, #f0faff 100%);
+  background-attachment: fixed;
+  padding: 20px 16px 48px;
+}
 
-  /* animations */
-  @keyframes pop { from{opacity:0; transform:translateY(10px) scale(.995)} to{opacity:1; transform:none} }
-  .pop{animation:pop 420ms cubic-bezier(.2,.9,.3,1) both}
+[data-theme="dark"] body {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
+    linear-gradient(175deg, #071422 0%, #0a1a30 40%, #0d2040 100%);
+  background-attachment: fixed;
+}
 
-  /* responsive */
-  @media (max-width:720px){
-    .link-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
-    .icon{width:48px;height:48px;flex:0 0 48px}
-    .tile{padding:12px;min-height:64px}
-    h1{font-size:18px}
-    .audio-bubble{width:40px;height:40px}
-  }
+/* Decorative blobs */
+body::before, body::after {
+  content: ''; position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
+}
+body::before {
+  width: 640px; height: 640px;
+  background: radial-gradient(circle, rgba(110,198,245,0.22), transparent 65%);
+  top: -160px; right: -160px;
+}
+body::after {
+  width: 480px; height: 480px;
+  background: radial-gradient(circle, rgba(70,196,227,0.14), transparent 65%);
+  bottom: -120px; left: -120px;
+}
 
-  /* focus */
-  .tile:focus{outline:3px solid rgba(30,132,201,0.18);outline-offset:4px}
+/* ======================================================================
+   SEASONAL THEMES
+   Applied automatically by JS based on current month.
+   To manually override: set data-season="spring|summer|autumn|winter" on <html>
+   ====================================================================== */
+[data-season="spring"] { --sky-top:#a8e6cf; --sky-mid:#c8f5e0; --sky-low:#e8fff5; }
+[data-season="spring"][data-theme="dark"] { --sky-top:#0a1f14; --sky-mid:#0d2a1a; --sky-low:#0f3020; }
+/* summer = default Aero blue, no override needed */
+[data-season="autumn"] {
+  --sky-top:#e8a87c; --sky-mid:#f2c99a; --sky-low:#fdecd8;
+  --accent:#c0622a; --accent-2:#e8903a; --accent-glow:rgba(192,98,42,0.22);
+}
+[data-season="autumn"][data-theme="dark"] { --sky-top:#1a0e06; --sky-mid:#261408; --sky-low:#301a0a; }
+[data-season="winter"] {
+  --sky-top:#b8d4f0; --sky-mid:#d8eaf8; --sky-low:#eef5fd;
+  --accent:#3a7abf; --accent-2:#6ab0e8; --accent-glow:rgba(58,122,191,0.22);
+}
+[data-season="winter"][data-theme="dark"] { --sky-top:#080e1a; --sky-mid:#0c1428; --sky-low:#101a30; }
 
-  /* ---------- Lock overlay styles (smaller, tighter) ---------- */
-  .lock-overlay{
-    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-    background:rgba(4,12,20,0.45);backdrop-filter: blur(4px) saturate(110%);z-index:9999;
-    -webkit-backdrop-filter: blur(4px);
-  }
+/* Snowflakes */
+.snowflakes { position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;display:none; }
+[data-season="winter"] .snowflakes { display:block; }
+.snowflake { position:absolute;top:-20px;color:rgba(255,255,255,0.78);font-size:1em;animation:snowfall linear infinite;user-select:none;pointer-events:none; }
+[data-theme="dark"] .snowflake { color:rgba(160,200,240,0.38); }
+@keyframes snowfall { 0%{transform:translateY(-20px) rotate(0deg);opacity:1;} 100%{transform:translateY(110vh) rotate(360deg);opacity:0.1;} }
 
-  .lock-panel{
-    width:min(480px,92%);background:linear-gradient(180deg,rgba(255,255,255,0.98),rgba(245,251,255,0.96));
-    border-radius:12px;padding:16px;border:1px solid rgba(0,0,0,0.06);box-shadow:0 20px 48px rgba(3,20,40,0.32);
-    display:flex;flex-direction:column;gap:10px;align-items:stretch;
-  }
+/* Autumn leaves */
+.leaves { position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;display:none; }
+[data-season="autumn"] .leaves { display:block; }
+.leaf { position:absolute;top:-30px;animation:leaffall linear infinite;user-select:none;pointer-events:none;font-size:1.2em; }
+@keyframes leaffall { 0%{transform:translateY(-30px) rotate(0deg) translateX(0);opacity:1;} 50%{transform:translateY(50vh) rotate(180deg) translateX(40px);} 100%{transform:translateY(110vh) rotate(360deg) translateX(-20px);opacity:0.1;} }
 
-  .lock-header{display:flex;align-items:center;gap:12px;}
-  .lock-logo{width:56px;height:40px;border-radius:8px;background:linear-gradient(180deg,#e8f6ff,#dff3ff);display:flex;align-items:center;justify-content:center;font-weight:800;color:#003a6b}
-  .lock-title{font-size:18px;color:#0c3a52;margin:0;font-weight:800}
-  .lock-desc{font-size:13px;color:#0b4a63;opacity:0.95}
+/* Spring blossoms */
+.blossoms { position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;display:none; }
+[data-season="spring"] .blossoms { display:block; }
+.blossom { position:absolute;top:-20px;animation:blossomfall linear infinite;user-select:none;pointer-events:none;font-size:0.9em; }
+@keyframes blossomfall { 0%{transform:translateY(-20px) rotate(0deg);opacity:1;} 100%{transform:translateY(110vh) rotate(720deg);opacity:0.1;} }
 
-  .pass-row{display:flex;gap:10px;align-items:center;margin-top:6px}
-  .pass-row input{
-    flex:1;padding:10px 12px;border-radius:10px;border:1px solid rgba(0,0,0,0.08);font-size:15px;outline:none;
-    box-shadow: inset 0 -6px 12px rgba(0,0,0,0.02);background:white;
-  }
-  .pass-row button{
-    padding:9px 12px;border-radius:10px;border:0;background:linear-gradient(180deg,var(--accent),var(--accent-2));color:white;font-weight:700;cursor:pointer;
-    box-shadow:0 8px 20px rgba(30,132,201,0.18);
-  }
+@media (prefers-reduced-motion:reduce) { .snowflake,.leaf,.blossom { animation:none;display:none; } }
 
-  .err{color:#8b1c1c;background:rgba(139,28,28,0.06);padding:8px;border-radius:8px;border:1px solid rgba(139,28,28,0.08);display:none}
+/* Seasonal indicator pill in header tagline */
+.season-pill {
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(255,255,255,0.5);border:1px solid var(--glass-border);
+  border-radius:100px;padding:2px 9px;font-size:11px;color:var(--text-soft);
+  backdrop-filter:blur(6px);vertical-align:middle;margin-left:6px;
+}
+[data-theme="dark"] .season-pill { background:rgba(20,40,80,0.5); }
 
-  .lock-hint{font-size:13px;color:#0b4a63;opacity:0.9}
+/* ======================================================================
+   CUSTOM CURSOR
+   ====================================================================== */
+body,input,select,button,a,[role="button"] { cursor:none; }
+/* Fallback for touch devices */
+@media (hover:none) {
+  body,input,select,button,a,[role="button"] { cursor:auto; }
+  .cursor-dot,.cursor-ring { display:none !important; }
+}
 
-  /* tiny accessibility focus */
-  .pass-row input:focus{outline:3px solid rgba(30,132,201,0.14);outline-offset:3px}
-  .pass-row button:focus{outline:3px solid rgba(30,132,201,0.14);outline-offset:3px}
+.cursor-dot {
+  position:fixed;z-index:99999;pointer-events:none;
+  width:9px;height:9px;border-radius:50%;
+  background:var(--accent);
+  transform:translate(-50%,-50%);
+  transition:width .12s,height .12s,background .15s;
+  will-change:left,top;
+}
+.cursor-ring {
+  position:fixed;z-index:99998;pointer-events:none;
+  width:34px;height:34px;border-radius:50%;
+  border:1.5px solid rgba(14,127,204,0.42);
+  transform:translate(-50%,-50%);
+  transition:width .24s cubic-bezier(.2,.9,.3,1),height .24s cubic-bezier(.2,.9,.3,1),border-color .2s,background .2s;
+  will-change:left,top;
+}
+[data-theme="dark"] .cursor-ring { border-color:rgba(56,174,232,0.5); }
+body.cursor-hover .cursor-dot  { width:5px;height:5px;background:white; }
+body.cursor-hover .cursor-ring { width:44px;height:44px;border-color:rgba(14,127,204,0.65);background:rgba(14,127,204,0.07); }
+body.cursor-click .cursor-dot  { width:13px;height:13px;background:var(--accent-2); }
+body.cursor-click .cursor-ring { width:26px;height:26px; }
 
-  /* small toast */
-  .toast{
-    position:fixed;right:18px;bottom:18px;background:var(--glass);padding:10px 14px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);
-    box-shadow:0 10px 30px rgba(3,20,40,0.12);font-size:13px;color:#043347;z-index:99999;opacity:0;transform:translateY(10px);transition:all .28s cubic-bezier(.2,.9,.3,1);
-  }
-  .toast.show{opacity:1;transform:none;}
+/* ── Animated clouds ── */
+.clouds { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.cloud {
+  position: absolute;
+  background: rgba(255,255,255,0.55);
+  border-radius: 50px;
+  animation: drift linear infinite;
+}
+[data-theme="dark"] .cloud { background: rgba(255,255,255,0.04); }
+.cloud::before, .cloud::after {
+  content: ''; position: absolute; background: inherit; border-radius: 50%;
+}
+.cloud:nth-child(1) { width:120px;height:40px; top:8%; animation-duration:80s; animation-delay:-20s; }
+.cloud:nth-child(1)::before { width:60px;height:60px;top:-30px;left:15px; }
+.cloud:nth-child(1)::after  { width:40px;height:40px;top:-18px;left:55px; }
+.cloud:nth-child(2) { width:180px;height:55px; top:18%; animation-duration:110s; animation-delay:-50s; opacity:.7; }
+.cloud:nth-child(2)::before { width:80px;height:80px;top:-40px;left:25px; }
+.cloud:nth-child(2)::after  { width:55px;height:55px;top:-25px;left:80px; }
+.cloud:nth-child(3) { width:90px;height:30px; top:32%; animation-duration:65s; animation-delay:-10s; opacity:.5; }
+.cloud:nth-child(3)::before { width:50px;height:50px;top:-25px;left:10px; }
+.cloud:nth-child(4) { width:140px;height:45px; top:5%; animation-duration:95s; animation-delay:-75s; opacity:.6; }
+.cloud:nth-child(4)::before { width:70px;height:70px;top:-35px;left:20px; }
+.cloud:nth-child(4)::after  { width:45px;height:45px;top:-20px;left:70px; }
+@keyframes drift {
+  from { transform: translateX(-250px); }
+  to   { transform: translateX(calc(100vw + 250px)); }
+}
+@media (prefers-reduced-motion: reduce) { .cloud { animation: none; } }
 
+/* ── Lock overlay ── */
+.lock-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(4,12,24,0.6);
+  backdrop-filter: blur(16px) saturate(130%);
+  -webkit-backdrop-filter: blur(16px) saturate(130%);
+  transition: opacity .4s;
+}
+.lock-overlay.hiding { opacity: 0; pointer-events: none; }
+
+.lock-panel {
+  width: min(460px,93vw);
+  background: linear-gradient(155deg, rgba(255,255,255,0.96), rgba(225,246,255,0.94));
+  border-radius: var(--radius-lg); padding: 32px 28px 26px;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 40px 80px rgba(0,20,60,0.32), inset 0 1px 0 rgba(255,255,255,0.6);
+  display: flex; flex-direction: column; gap: 16px;
+  animation: panelIn .5s cubic-bezier(.2,.9,.3,1) both;
+}
+@keyframes panelIn { from{opacity:0;transform:translateY(20px) scale(.97);} to{opacity:1;transform:none;} }
+
+.lock-logo-row { display: flex; align-items: center; gap: 14px; }
+.lock-logo {
+  width: 50px; height: 50px; border-radius: 13px; flex-shrink: 0;
+  background: linear-gradient(145deg,#d4f0ff,#aadaf5);
+  box-shadow: 0 4px 16px rgba(0,80,160,0.12), inset 0 1px 0 rgba(255,255,255,0.7);
+  display: flex; align-items: center; justify-content: center;
+}
+.lock-logo svg { width: 26px; height: 26px; }
+.lock-heading { font-family: var(--font-display); font-size: 19px; font-weight: 900; color: #042a3c; }
+.lock-sub { font-size: 13px; color: #3a7a99; margin-top: 3px; }
+
+.lock-hint {
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(14,127,204,0.07); border: 1px solid rgba(14,127,204,0.12);
+  border-radius: 100px; padding: 6px 12px; font-size: 12px; color: #185470; width: fit-content;
+}
+
+.pass-row { display: flex; gap: 10px; }
+.pass-input {
+  flex: 1; padding: 12px 14px; border-radius: var(--radius-md);
+  border: 1.5px solid rgba(0,0,0,0.07); font-size: 16px; outline: none;
+  background: rgba(255,255,255,0.9); color: #042a3c;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.04), inset 0 1px 0 white;
+  transition: border-color .2s, box-shadow .2s;
+  letter-spacing: 4px; font-family: var(--font-body);
+}
+.pass-input::placeholder { letter-spacing: 0; color: #a0b8c8; }
+.pass-input:focus {
+  border-color: rgba(14,127,204,0.4);
+  box-shadow: 0 0 0 4px rgba(14,127,204,0.15), 0 3px 10px rgba(0,0,0,0.04);
+}
+.unlock-btn {
+  padding: 12px 18px; border-radius: var(--radius-md); border: 0; cursor: pointer;
+  background: linear-gradient(145deg,#0e7fcc,#0a6ab5); color: white;
+  font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+  box-shadow: 0 8px 22px rgba(14,127,204,0.30);
+  transition: transform var(--ease), box-shadow var(--ease);
+}
+.unlock-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(14,127,204,0.38); }
+
+.lock-err {
+  display: none; align-items: center; gap: 8px;
+  color: var(--danger); background: rgba(192,57,43,0.06);
+  padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid rgba(192,57,43,0.12);
+  font-size: 13px;
+}
+.lock-err.show { display: flex; }
+.lock-footer { font-size: 11px; color: #7aaccb; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+/* ── App shell ── */
+body.locked { overflow: hidden; }
+body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; opacity: 0.35; }
+
+.app {
+  position: relative; z-index: 1;
+  max-width: 1280px; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 14px;
+  transition: filter .3s, opacity .3s;
+}
+
+/* ── Header ── */
+.header {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg); padding: 13px 18px;
+  box-shadow: 0 8px 32px var(--glass-shadow);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  transition: background .3s, border-color .3s;
+}
+.header-logo {
+  width: 46px; height: 46px; border-radius: var(--radius-md); flex-shrink: 0;
+  background: linear-gradient(145deg,#d4f0ff,#aadaf5);
+  box-shadow: 0 4px 14px rgba(0,80,160,0.12), inset 0 1px 0 rgba(255,255,255,0.7);
+  display: flex; align-items: center; justify-content: center;
+}
+[data-theme="dark"] .header-logo { background: linear-gradient(145deg,#0e2a42,#0d3555); }
+.header-logo svg { width: 24px; height: 24px; }
+
+.header-text h1 {
+  font-family: var(--font-display); font-size: clamp(13px,2.2vw,19px);
+  font-weight: 900; color: var(--text); letter-spacing: -0.4px; line-height: 1;
+}
+.header-text .tagline { font-size: 11.5px; color: var(--text-soft); margin-top: 3px; }
+
+.header-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+/* Icon button (round glass pill) */
+.icon-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: linear-gradient(145deg,rgba(255,255,255,0.85),rgba(220,243,255,0.75));
+  box-shadow: 0 4px 12px var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,0.6);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: transform var(--ease), box-shadow var(--ease), background var(--ease);
+  flex-shrink: 0; position: relative;
+}
+[data-theme="dark"] .icon-btn {
+  background: linear-gradient(145deg,rgba(30,60,100,0.8),rgba(20,45,80,0.7));
+}
+.icon-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 22px var(--glass-shadow); }
+.icon-btn:active { transform: scale(.96); }
+.icon-btn svg { width: 17px; height: 17px; pointer-events: none; }
+.icon-btn[aria-pressed="true"] {
+  background: linear-gradient(145deg,rgba(14,127,204,0.18),rgba(70,196,227,0.12));
+}
+
+/* Tooltip on icon buttons */
+.icon-btn::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  background: rgba(4,20,40,0.88); color: #d8eeff;
+  font-size: 11px; font-family: var(--font-body); font-weight: 500;
+  padding: 4px 9px; border-radius: 6px; white-space: nowrap;
+  opacity: 0; pointer-events: none; transition: opacity .18s;
+}
+.icon-btn:hover::after { opacity: 1; }
+
+.contribute-btn {
+  padding: 9px 15px; border-radius: var(--radius-md); text-decoration: none;
+  background: linear-gradient(145deg,var(--accent),#0a6ab5); color: white;
+  font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+  box-shadow: 0 6px 18px rgba(14,127,204,0.26);
+  transition: transform var(--ease), box-shadow var(--ease);
+  white-space: nowrap;
+}
+.contribute-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(14,127,204,0.34); }
+
+/* ── Daily featured banner ── */
+.featured-banner {
+  background: linear-gradient(135deg,rgba(14,127,204,0.12),rgba(70,196,227,0.10));
+  border: 1px solid rgba(14,127,204,0.18);
+  border-radius: var(--radius-md); padding: 12px 16px;
+  display: flex; align-items: center; gap: 14px;
+  backdrop-filter: blur(12px); animation: fadeSlide .5s var(--ease) both;
+}
+[data-theme="dark"] .featured-banner {
+  background: linear-gradient(135deg,rgba(56,174,232,0.12),rgba(86,212,245,0.08));
+  border-color: rgba(56,174,232,0.18);
+}
+@keyframes fadeSlide { from{opacity:0;transform:translateY(-8px);} to{opacity:1;transform:none;} }
+.featured-icon {
+  font-size: 22px; flex-shrink: 0;
+  background: linear-gradient(145deg,rgba(255,255,255,0.9),rgba(220,245,255,0.8));
+  border-radius: 10px; width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px var(--glass-shadow);
+}
+[data-theme="dark"] .featured-icon { background: rgba(20,50,90,0.8); }
+.featured-text { flex: 1; min-width: 0; }
+.featured-label {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+  color: var(--accent); font-family: var(--font-display); margin-bottom: 2px;
+}
+.featured-name { font-weight: 600; font-size: 14px; color: var(--text); }
+.featured-host { font-size: 12px; color: var(--text-soft); }
+.featured-link {
+  flex-shrink: 0; padding: 8px 14px; border-radius: var(--radius-sm);
+  background: var(--accent); color: white; text-decoration: none;
+  font-size: 12px; font-weight: 600; font-family: var(--font-body);
+  box-shadow: 0 4px 12px rgba(14,127,204,0.26);
+  transition: transform var(--ease), box-shadow var(--ease);
+}
+.featured-link:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(14,127,204,0.34); }
+
+/* ── Controls row ── */
+.controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.search-wrap {
+  flex: 1; min-width: 180px;
+  display: flex; align-items: center; gap: 9px;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md); padding: 10px 13px;
+  box-shadow: 0 4px 14px var(--glass-shadow);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  transition: box-shadow .2s, border-color .2s;
+}
+.search-wrap:focus-within {
+  border-color: rgba(14,127,204,0.3);
+  box-shadow: 0 0 0 3px var(--accent-glow), 0 4px 14px var(--glass-shadow);
+}
+.search-wrap svg { flex-shrink: 0; opacity: 0.45; }
+.search-wrap input {
+  border: 0; outline: none; font-size: 15px; background: transparent;
+  width: 100%; color: var(--text); font-family: var(--font-body);
+}
+.search-wrap input::placeholder { color: var(--text-soft); opacity: 0.7; }
+.search-shortcut {
+  flex-shrink: 0; background: rgba(0,80,140,0.07); border: 1px solid rgba(0,80,140,0.12);
+  border-radius: 5px; padding: 2px 6px; font-size: 11px; color: var(--text-soft);
+}
+
+/* Sort select */
+.sort-select {
+  padding: 9px 12px; border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border); background: var(--glass-bg);
+  color: var(--text); font-size: 13px; font-family: var(--font-body);
+  outline: none; cursor: pointer;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 14px var(--glass-shadow);
+}
+
+/* ── Filter pills ── */
+.filters { display: flex; gap: 7px; flex-wrap: wrap; }
+.filter-btn {
+  padding: 7px 13px; border-radius: 100px;
+  border: 1px solid rgba(0,80,140,0.12);
+  background: rgba(255,255,255,0.55); font-size: 12px;
+  color: var(--text-mid); cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background var(--ease), border-color var(--ease), color var(--ease), transform var(--ease);
+  font-weight: 500; font-family: var(--font-body);
+}
+[data-theme="dark"] .filter-btn { background: rgba(20,50,90,0.5); border-color: rgba(255,255,255,0.08); }
+.filter-btn:hover { background: rgba(255,255,255,0.82); transform: translateY(-1px); }
+.filter-btn.active {
+  background: linear-gradient(145deg,var(--accent),#0a6ab5); color: white;
+  border-color: transparent; box-shadow: 0 4px 14px rgba(14,127,204,0.28);
+}
+
+/* ── Stats bar ── */
+.stats-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; color: var(--text-soft); gap: 10px; flex-wrap: wrap;
+}
+.results-count { font-weight: 600; color: var(--text-mid); }
+
+/* ── Grid shell ── */
+.grid-shell {
+  background: rgba(255,255,255,0.36); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg); padding: 14px;
+  box-shadow: 0 12px 40px var(--glass-shadow);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  min-height: 300px;
+  transition: background .3s;
+}
+[data-theme="dark"] .grid-shell { background: rgba(8,20,44,0.5); }
+
+/* ── List view ── */
+.link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--grid-min),1fr));
+  gap: var(--grid-gap);
+}
+[data-view="list"] .link-grid {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+[data-view="list"] .tile { min-height: 52px; padding: 10px 14px; }
+[data-view="list"] .tile-icon { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 8px; }
+[data-view="list"] .tile-icon img { width: 22px; height: 22px; }
+[data-view="list"] .tile-name { font-size: 13.5px; }
+[data-view="list"] .tile-host { display: none; }
+[data-view="list"] .tile-fav { top: 50%; transform: translateY(-50%); right: 12px; }
+
+/* ── Tile ── */
+.tile {
+  position: relative; display: flex; align-items: center; gap: 11px;
+  padding: 13px 13px; border-radius: var(--radius-md); text-decoration: none;
+  color: var(--text); overflow: hidden; cursor: pointer;
+  background: linear-gradient(150deg,rgba(255,255,255,0.84),rgba(232,248,255,0.74));
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 14px rgba(0,40,90,0.06);
+  transition: transform var(--ease), box-shadow var(--ease), background var(--ease), border-color var(--ease);
+  min-height: 72px;
+  opacity: 0;
+  animation: tileIn .38s cubic-bezier(.2,.9,.3,1) both;
+}
+[data-theme="dark"] .tile {
+  background: linear-gradient(150deg,rgba(14,34,68,0.85),rgba(10,26,54,0.78));
+}
+.tile:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 22px 44px rgba(0,40,100,0.14), 0 0 0 1px rgba(14,127,204,0.14);
+  background: linear-gradient(150deg,rgba(255,255,255,0.96),rgba(230,250,255,0.88));
+}
+[data-theme="dark"] .tile:hover {
+  background: linear-gradient(150deg,rgba(18,42,80,0.95),rgba(14,34,68,0.9));
+}
+.tile::after {
+  content:''; position:absolute; inset:0; border-radius:inherit;
+  background: linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.35) 60%,transparent 75%);
+  opacity: 0; transition: opacity .3s; pointer-events: none;
+}
+.tile:hover::after { opacity: 1; }
+.tile.fav-tile { border-color: rgba(245,166,35,0.30); }
+[data-theme="dark"] .tile.fav-tile { border-color: rgba(245,166,35,0.20); }
+
+@keyframes tileIn {
+  from { opacity:0; transform:translateY(12px) scale(.985); }
+  to   { opacity:1; transform:none; }
+}
+
+.tile-icon {
+  width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(145deg,#eaf6ff,#d0ecff);
+  border: 1px solid rgba(255,255,255,0.7);
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  box-shadow: 0 3px 9px rgba(0,60,120,0.08);
+}
+[data-theme="dark"] .tile-icon { background: linear-gradient(145deg,#0e2a42,#0d3555); border-color: rgba(255,255,255,0.06); }
+.tile-icon img { width: 28px; height: 28px; object-fit: contain; }
+
+.tile-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.tile-name { font-weight: 600; font-size: 13.5px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile-host { font-size: 11.5px; color: var(--text-soft); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Favourite star */
+.tile-fav {
+  position: absolute; top: 8px; right: 8px;
+  width: 24px; height: 24px; border-radius: 50%; border: 0;
+  background: rgba(255,255,255,0.6); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .2s, transform .2s, background .2s;
+  z-index: 2;
+}
+[data-theme="dark"] .tile-fav { background: rgba(30,60,100,0.6); }
+.tile:hover .tile-fav, .tile-fav.active { opacity: 1; }
+.tile-fav svg { width: 13px; height: 13px; pointer-events: none; }
+.tile-fav.active { background: rgba(245,166,35,0.15); }
+.tile-fav.active svg path { fill: var(--star-active); stroke: var(--star-active); }
+.tile-fav:hover { transform: scale(1.2); }
+
+/* "New" badge */
+.tile-badge-new {
+  position: absolute; bottom: 8px; right: 8px;
+  background: linear-gradient(135deg,#38c85a,#0a9e6e);
+  color: white; font-size: 9px; font-weight: 700; font-family: var(--font-display);
+  padding: 2px 6px; border-radius: 100px; letter-spacing: 0.5px;
+  pointer-events: none;
+}
+
+/* Report button (hidden, appears on right-click context trigger) */
+.tile-report {
+  position: absolute; bottom: 8px; left: 8px;
+  background: rgba(192,57,43,0.10); border: 1px solid rgba(192,57,43,0.15);
+  border-radius: 6px; padding: 2px 8px;
+  color: var(--danger); font-size: 10px; font-weight: 600; cursor: pointer;
+  opacity: 0; transition: opacity .2s; z-index: 2;
+  display: flex; align-items: center; gap: 4px;
+}
+.tile:hover .tile-report { opacity: 1; }
+
+/* ── Recently visited strip ── */
+.recent-section { display: flex; flex-direction: column; gap: 8px; }
+.recent-label {
+  font-size: 11px; font-weight: 600; color: var(--text-soft);
+  text-transform: uppercase; letter-spacing: 0.6px;
+}
+.recent-strip { display: flex; gap: 8px; flex-wrap: wrap; }
+.recent-chip {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 11px; border-radius: 100px; text-decoration: none;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  font-size: 12px; color: var(--text-mid); font-weight: 500;
+  box-shadow: 0 3px 10px var(--glass-shadow);
+  transition: transform var(--ease), box-shadow var(--ease);
+  backdrop-filter: blur(8px);
+}
+.recent-chip:hover { transform: translateY(-2px); box-shadow: 0 8px 18px var(--glass-shadow); }
+.recent-chip img { width: 16px; height: 16px; border-radius: 4px; object-fit: contain; }
+
+/* ── Empty state ── */
+.empty {
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  padding: 56px 20px; text-align: center; gap: 10px; color: var(--text-soft);
+}
+.empty.show { display: flex; }
+.empty svg { opacity: 0.3; width: 44px; height: 44px; }
+.empty-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-mid); }
+.empty-sub { font-size: 13px; }
+
+/* ── Spinner (random) overlay ── */
+.spinner-overlay {
+  position: fixed; inset: 0; z-index: 8000;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(4,12,24,0.5);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  opacity: 0; pointer-events: none; transition: opacity .3s;
+}
+.spinner-overlay.open { opacity: 1; pointer-events: all; }
+.spinner-card {
+  width: min(400px,90vw);
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg); padding: 32px 28px;
+  box-shadow: 0 32px 64px rgba(0,20,60,0.26);
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  text-align: center;
+  transform: scale(.95); transition: transform .32s cubic-bezier(.2,.9,.3,1);
+}
+.spinner-overlay.open .spinner-card { transform: none; }
+.spinner-emoji { font-size: 52px; animation: spinBounce .6s infinite alternate; }
+@keyframes spinBounce { from{transform:scale(1) rotate(-5deg);} to{transform:scale(1.1) rotate(5deg);} }
+.spinner-title { font-family: var(--font-display); font-size: 16px; font-weight: 900; color: var(--text); }
+.spinner-name { font-size: 20px; font-weight: 700; color: var(--accent); font-family: var(--font-display); }
+.spinner-host { font-size: 13px; color: var(--text-soft); }
+.spinner-actions { display: flex; gap: 10px; margin-top: 4px; }
+.spinner-go {
+  padding: 11px 22px; border-radius: var(--radius-md); border: 0; cursor: pointer;
+  background: linear-gradient(145deg,var(--accent),#0a6ab5); color: white;
+  font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  box-shadow: 0 6px 18px rgba(14,127,204,0.28);
+  transition: transform var(--ease), box-shadow var(--ease);
+  text-decoration: none; display: inline-block;
+}
+.spinner-go:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(14,127,204,0.36); }
+.spinner-again {
+  padding: 11px 16px; border-radius: var(--radius-md); border: 1px solid var(--glass-border);
+  background: var(--glass-bg); color: var(--text-mid);
+  font-family: var(--font-body); font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: background var(--ease);
+}
+.spinner-again:hover { background: rgba(255,255,255,0.85); }
+.spinner-close {
+  position: absolute; top: 14px; right: 14px;
+  width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--glass-border);
+  background: var(--glass-bg); cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: var(--text-soft);
+}
+
+/* ── Footer ── */
+.footer {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; color: var(--text-soft); flex-wrap: wrap; gap: 8px;
+}
+.footer a { color: var(--accent); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+.note-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.48); border: 1px solid rgba(0,80,140,0.10);
+  border-radius: 100px; padding: 5px 12px;
+  backdrop-filter: blur(8px);
+}
+[data-theme="dark"] .note-pill { background: rgba(14,34,68,0.6); border-color: rgba(255,255,255,0.08); }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 20px; right: 20px; z-index: 99999;
+  background: rgba(255,255,255,0.92); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md); padding: 10px 16px;
+  box-shadow: 0 12px 32px rgba(0,30,60,0.14);
+  font-size: 13px; color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+  opacity: 0; transform: translateY(10px); pointer-events: none;
+  transition: opacity .28s, transform .28s;
+  backdrop-filter: blur(12px); max-width: 280px;
+}
+[data-theme="dark"] .toast { background: rgba(12,28,60,0.94); }
+.toast.show { opacity: 1; transform: none; }
+.toast-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(14,127,204,0.18); border-radius: 8px;
+  border: 2px solid transparent; background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(14,127,204,0.30); }
+
+/* ── Focus ── */
+*:focus-visible { outline: 3px solid var(--accent-glow); outline-offset: 3px; }
+
+/* ── Responsive ── */
+@media (max-width:680px) {
+  .link-grid { grid-template-columns: repeat(auto-fill,minmax(150px,1fr)); }
+  .header-text h1 { font-size: 13px; }
+  .contribute-btn { display: none; }
+  .sort-select { display: none; }
+  .header { padding: 10px 12px; gap: 10px; }
+  .icon-btn { width: 36px; height: 36px; }
+}
+@media (max-width:400px) {
+  .link-grid { grid-template-columns: 1fr 1fr; }
+  .filters { display: none; }
+}
 </style>
 </head>
+
 <body class="locked">
-  <!-- Lock overlay: pops up before accessing the site -->
-  <div class="lock-overlay" id="lockOverlay" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
-    <div class="lock-panel" role="document">
-      <div class="lock-header">
-        <div class="lock-logo" aria-hidden="true">GALLERY</div>
-        <div>
-          <h2 id="lockTitle" class="lock-title">Enter access code</h2>
-          <div class="lock-desc">This page is protected. Enter the 4-digit code to continue.</div>
-        </div>
+
+<!-- ── Custom cursor ── -->
+<div class="cursor-dot"  id="cursorDot"  aria-hidden="true"></div>
+<div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
+
+<!-- ── Clouds ── -->
+<div class="clouds" aria-hidden="true">
+  <div class="cloud"></div>
+  <div class="cloud"></div>
+  <div class="cloud"></div>
+  <div class="cloud"></div>
+</div>
+
+<!-- ── Seasonal particles (populated by JS) ── -->
+<div class="snowflakes" id="snowflakes" aria-hidden="true"></div>
+<div class="leaves"     id="leaves"     aria-hidden="true"></div>
+<div class="blossoms"   id="blossoms"   aria-hidden="true"></div>
+
+<!-- ======================================================
+     LOCK OVERLAY
+     Access code: defined in JS as LOCK_CODE below
+====================================================== -->
+<div class="lock-overlay" id="lockOverlay" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
+  <div class="lock-panel">
+    <div class="lock-logo-row">
+      <div class="lock-logo" aria-hidden="true">
+        <svg viewBox="0 0 28 28" fill="none">
+          <rect x="3" y="8" width="22" height="14" rx="4" stroke="#0e7fcc" stroke-width="1.8"/>
+          <path d="M9 15h4m-2-2v4" stroke="#0e7fcc" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="20" cy="15" r="1.2" fill="#0e7fcc"/>
+          <circle cx="17" cy="15" r="1.2" fill="#46c4e3"/>
+          <path d="M10 8V6a4 4 0 0 1 8 0v2" stroke="#0e7fcc" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
       </div>
-
-      <div class="lock-hint">Tip: numeric only. Press Enter after typing.</div>
-
-      <div class="pass-row" style="margin-top:6px;">
-        <input id="passInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="10" autocomplete="one-time-code" aria-label="Access code" placeholder="Enter code"/>
-        <button id="passBtn" aria-label="Unlock">Unlock</button>
-      </div>
-
-      <div id="errMsg" class="err" role="status" aria-live="polite">Incorrect code — try again.</div>
-
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:12px;color:#0b4a63;opacity:0.9">
-        <div>Music will play after entering code, press the mute button to stop.</div>
-        <div>Session unlock remembered for this tab.</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="container" role="main" aria-hidden="false">
-    <header>
-      <div class="logo" aria-hidden="true">GALLERY</div>
       <div>
-        <h1>The Game Gallery</h1>
-        <div class="meta">Frutiger Aero / XP-inspired — everything opens in a new tab.</div>
+        <div class="lock-heading" id="lockTitle">Enter access code</div>
+        <div class="lock-sub">This gallery is access-protected.</div>
       </div>
-
-      <div class="top-right" style="align-items:center">
-        <!-- audio bubble placed before contribute -->
-        <button id="audioBtn" class="audio-bubble" aria-pressed="false" title="Play / pause audio" aria-label="Play music (Music.mp3)">
-          <!-- SVG styled minimal speaker icon (play state and pause toggled via JS) -->
-          <svg id="audioIcon" class="audio-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path id="speakerPath" d="M5 9v6h4l5 4V5L9 9H5z" fill="#0c3a52"/>
-          </svg>
-        </button>
-
-        <a class="contribute" href="https://github.com/Red404441/Games-gallery-" target="_blank" rel="noopener">Contribute</a>
-      </div>
-    </header>
-
-    <div class="search-row" style="margin-bottom:6px">
-      <div class="search" role="search" aria-label="Search links">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 21l-4.35-4.35" stroke="#0b4a63" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="11" r="6" stroke="#0b4a63" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <input id="searchInput" placeholder="find a game..." aria-label="Find a game" autocomplete="off"/>
-        <div class="hint" style="opacity:0.9">Press / to search</div>
-      </div>
-      <div class="results-info" id="resultsInfo">119 links</div>
     </div>
-
-    <!-- small place where the iframe used to be; replaced with local-controlled audio bubble -->
-    <div style="height:6px;"></div>
-
-    <div class="grid-wrap" id="gridWrap" aria-live="polite">
-      <div class="link-grid" id="linkGrid" aria-label="All links"></div>
+    <div class="lock-hint" aria-hidden="true">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2a5 5 0 0 1 5 5v2H7V7a5 5 0 0 1 5-5z" stroke="#185470" stroke-width="1.8" stroke-linejoin="round"/>
+        <rect x="3" y="9" width="18" height="13" rx="3" stroke="#185470" stroke-width="1.8"/>
+        <circle cx="12" cy="15.5" r="1.5" fill="#185470"/>
+      </svg>
+      Numeric only — press Enter to confirm
     </div>
+    <div class="pass-row">
+      <input class="pass-input" id="passInput" type="password" inputmode="numeric"
+             pattern="[0-9]*" maxlength="10" autocomplete="one-time-code"
+             aria-label="Access code" placeholder="••••"/>
+      <button class="unlock-btn" id="passBtn">UNLOCK</button>
+    </div>
+    <div class="lock-err" id="errMsg" role="alert" aria-live="polite">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke="#c0392b" stroke-width="1.8"/>
+        <path d="M12 8v5" stroke="#c0392b" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="12" cy="16.5" r="1" fill="#c0392b"/>
+      </svg>
+      Incorrect code — try again.
+    </div>
+    <div class="lock-footer">
+      <span>Music plays after unlock — use mute button to stop.</span>
+      <span>Session remembered per tab.</span>
+    </div>
+  </div>
+</div>
 
-    <div class="note">Note: some links may be blocked by network filters or taken down. Tell me which ones break and I’ll will remove them.</div>
+<!-- ======================================================
+     RANDOM GAME SPINNER
+====================================================== -->
+<div class="spinner-overlay" id="spinnerOverlay" role="dialog" aria-modal="true" aria-label="Random game">
+  <div class="spinner-card" style="position:relative;">
+    <button class="spinner-close" id="spinnerClose" aria-label="Close">×</button>
+    <div class="spinner-emoji">🎲</div>
+    <div class="spinner-title">Your random game is…</div>
+    <div class="spinner-name" id="spinnerName">—</div>
+    <div class="spinner-host" id="spinnerHost">—</div>
+    <div class="spinner-actions">
+      <a class="spinner-go" id="spinnerGo" href="#" target="_blank" rel="noopener">Play now ↗</a>
+      <button class="spinner-again" id="spinnerAgain">Try another</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================
+     MAIN APP
+====================================================== -->
+<div class="app" id="app" data-view="grid">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-logo" aria-hidden="true">
+      <svg viewBox="0 0 28 28" fill="none">
+        <rect x="3" y="8" width="22" height="14" rx="4" stroke="#0e7fcc" stroke-width="1.7"/>
+        <path d="M9 15h4m-2-2v4" stroke="#0e7fcc" stroke-width="1.7" stroke-linecap="round"/>
+        <circle cx="20" cy="15" r="1.2" fill="#0e7fcc"/>
+        <circle cx="17" cy="15" r="1.2" fill="#46c4e3"/>
+        <path d="M10 8V6a4 4 0 0 1 8 0v2" stroke="#0e7fcc" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>The Game Gallery</h1>
+      <div class="tagline">Frutiger Aero Edition · all links open in new tab<span class="season-pill" id="seasonPill"></span></div>
+    </div>
+    <div class="header-actions">
+
+      <!-- Random game -->
+      <button class="icon-btn" id="randomBtn" data-tip="Random game" aria-label="Random game">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M16 3h5v5M8 3H3v5m13 13h5v-5M8 21H3v-5" stroke="var(--accent)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="12" cy="12" r="2" fill="var(--accent)"/>
+        </svg>
+      </button>
+
+      <!-- View toggle: grid / list -->
+      <button class="icon-btn" id="viewBtn" data-tip="Toggle list view" aria-pressed="false" aria-label="Toggle view">
+        <svg viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="4" width="18" height="4" rx="1.5" fill="var(--accent)"/>
+          <rect x="3" y="10" width="18" height="4" rx="1.5" fill="var(--accent)" opacity=".6"/>
+          <rect x="3" y="16" width="18" height="4" rx="1.5" fill="var(--accent)" opacity=".3"/>
+        </svg>
+      </button>
+
+      <!-- Dark mode -->
+      <button class="icon-btn" id="themeBtn" data-tip="Toggle dark mode" aria-label="Toggle dark mode">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path id="themeIcon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="var(--accent)" stroke="var(--accent)" stroke-width="1.3"/>
+        </svg>
+      </button>
+
+      <!-- Compact mode -->
+      <button class="icon-btn" id="compactBtn" data-tip="Compact tiles" aria-pressed="false" aria-label="Toggle compact mode">
+        <svg viewBox="0 0 24 24" fill="none">
+          <rect x="2" y="2" width="9" height="9" rx="2" fill="var(--accent)"/>
+          <rect x="13" y="2" width="9" height="9" rx="2" fill="var(--accent)" opacity=".6"/>
+          <rect x="2" y="13" width="9" height="9" rx="2" fill="var(--accent)" opacity=".6"/>
+          <rect x="13" y="13" width="9" height="9" rx="2" fill="var(--accent)" opacity=".3"/>
+        </svg>
+      </button>
+
+      <!-- Mute -->
+      <button class="icon-btn" id="audioBtn" data-tip="Play / mute music" aria-pressed="false" aria-label="Toggle music">
+        <svg id="audioIconSvg" viewBox="0 0 24 24" fill="none">
+          <path d="M5 9v6h4l5 4V5L9 9H5z" fill="var(--accent)"/>
+          <g id="speakerWaves">
+            <path d="M16.5 8.5a5 5 0 0 1 0 7" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M19 6a9 9 0 0 1 0 12" stroke="var(--accent-2)" stroke-width="1.4" stroke-linecap="round" opacity=".5"/>
+          </g>
+          <path id="muteX" d="M17 9l4 6m0-6l-4 6" stroke="var(--danger)" stroke-width="1.7" stroke-linecap="round" style="display:none"/>
+        </svg>
+      </button>
+
+      <a class="contribute-btn" href="https://github.com/Red404441/Games-gallery-" target="_blank" rel="noopener">Contribute ↗</a>
+    </div>
+  </header>
+
+  <!-- New Game Alert -->
+  <div class="featured-banner" id="featuredBanner" aria-label="New Game ">
+    <div class="featured-icon" id="featuredIcon">🎮</div>
+    <div class="featured-text">
+      <div class="featured-label">☀️ Newest Addtion To The Gallery</div>
+      <div class="featured-name" id="featuredName">Loading…</div>
+      <div class="featured-host" id="featuredHost"></div>
+    </div>
+    <a class="featured-link" id="featuredLink" href="#" target="_blank" rel="noopener">Play ↗</a>
   </div>
 
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <!-- Recently visited -->
+  <div class="recent-section" id="recentSection" style="display:none">
+    <div class="recent-label">Recently visited</div>
+    <div class="recent-strip" id="recentStrip"></div>
+  </div>
 
-	<script src="https://cdn.jsdelivr.net/gh/IdreesInc/Pocket-Bird@main/dist/web/birb.embed.js"></script>
+  <!-- Controls -->
+  <div class="controls">
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M21 21l-4.35-4.35" stroke="var(--text-mid)" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="11" cy="11" r="7" stroke="var(--text-mid)" stroke-width="1.8"/>
+      </svg>
+      <input id="searchInput" type="search" placeholder="Search games… (press /)" aria-label="Search games" autocomplete="off" spellcheck="false"/>
+      <kbd class="search-shortcut">/</kbd>
+    </div>
+    <select class="sort-select" id="sortSelect" aria-label="Sort games">
+      <option value="default">Default order</option>
+      <option value="az">A → Z</option>
+      <option value="za">Z → A</option>
+      <option value="favs">Favourites first</option>
+    </select>
+    <div class="filters" id="filterBar" role="group" aria-label="Filter by category"></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <span class="results-count" id="resultsCount">Loading…</span>
+    <span id="activeFilterLabel" style="font-size:12px;"></span>
+  </div>
+
+  <!-- Grid -->
+  <div class="grid-shell">
+    <div class="link-grid" id="linkGrid" role="list" aria-live="polite" aria-label="Games"></div>
+    <div class="empty" id="emptyState">
+      <svg viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke="var(--text-soft)" stroke-width="1.5"/>
+        <path d="M9 9l6 6m0-6l-6 6" stroke="var(--text-soft)" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <div class="empty-title">Nothing found</div>
+      <div class="empty-sub">Try a different search or clear the filter.</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="note-pill">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke="var(--text-soft)" stroke-width="1.6"/>
+        <path d="M12 8v5" stroke="var(--text-soft)" stroke-width="1.6" stroke-linecap="round"/>
+        <circle cx="12" cy="16.5" r="1" fill="var(--text-soft)"/>
+      </svg>
+      Some links may be blocked by filters. Report broken links via GitHub.
+    </div>
+    <div>
+      <a href="https://github.com/Red404441/Games-gallery-" target="_blank" rel="noopener">GitHub ↗</a>
+      &nbsp;·&nbsp; Built with ☁️
+    </div>
+  </footer>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <div class="toast-dot"></div>
+  <span id="toastMsg"></span>
+</div>
+
+<!-- Pocket bird easter egg -->
+<script src="https://cdn.jsdelivr.net/gh/IdreesInc/Pocket-Bird@main/dist/web/birb.embed.js"></script>
+
 <script>
-/* === Links - DO NOT REMOVE OR REORDER unless you intentionally want to swap === */
-const allLinks = [
-    {name:"Win10 Games Hub", url:"https://win10.webjeet.me/"},
-    {name:"Diep.io", url:"https://diep.io/"},
-    {name:"Wings.io", url:"https://wings.io/"},
-    {name:"Deeeep.io", url:"https://deeeep.io/"},
-    {name:"Brutal.io", url:"https://brutal.io/"},
-    {name:"Paper.io", url:"https://paper-io.com/"},
-    {name:"QuickDraw", url:"https://quickdraw.withgoogle.com/"},
-    {name:"Maths playground", url:"https://www.mathplayground.com/fun-skill-games.html"},
-    {name:"Slither.io", url:"https://slither.io/"},
-    {name:"Yorg.io", url:"https://yorg.io/"},
-    {name:"Vengeance.io", url:"https://venge.io/"},
-    {name:"Warbot.io", url:"https://warbot.io/"},
-    {name:"Garlic.io", url:"https://garlic.io/"},
-    {name:"Snake.io", url:"https://snake.io/"},
-    {name:"Card games.io", url:"https://cardgames.io/"},
-    {name:"Zombs.io", url:"https://zombs.io/"},
-    {name:"Hordes.io", url:"https://hordes.io/"},
-    {name:"Chess.com", url:"https://www.chess.com/"},
-    {name:"GeForce.com", url:"https://www.geforce.com/"},
-    {name:"Kour.io", url:"https://kour.io/"},
-    {name:"Neal.fun", url:"https://neal.fun/"},
-    {name:"Deadshot.io", url:"https://deadshot.io/"},
-    {name:"Oasis Starting Point", url:"https://oasis.decart.ai/starting-point?journey=Dense+Forest"},
-    {name:"BitLife", url:"https://bitlifeonline.io/home"},
-    {name:"Akinator", url:"https://en.akinator.com/"},
-    {name:"Armor Games", url:"https://armorgames.com/"},
-    {name:"FreeGames.com", url:"https://www.freegames.com/"},
-    {name:"Lagged.com", url:"https://lagged.com/en/"},
-    {name:"GamePix.com", url:"https://www.gamepix.com/"},
-    {name:"Jetpack Joyride", url:"https://jetpack-joyride.github.io/"},
-    {name:"Pogo.com", url:"https://www.pogo.com/"},
-    {name:"Gamezop", url:"https://www.gamezop.com/en"},
-    {name:"Jopi.com", url:"https://www.jopi.com/"},
-    {name:"Poki.ac", url:"https://poki.ac/"},
-    {name:"Friv2online", url:"https://www.friv2online.com/poki-games"},
-    {name:"KoalaBeast", url:"https://koalabeast.com/"},
-    {name:"Lexaloffle", url:"https://www.lexaloffle.com/bbs/?pid=136646#playing"},
-    {name:"Fallen London", url:"https://www.fallenlondon.com/"},
-    {name:"Granblue Fantasy", url:"https://granbluefantasy.jp/sp/en/"},
-    {name:"Corru Observer", url:"https://corru.observer/"},
-    {name:"AmongUsPlay", url:"https://amongusplay.online/"},
-    {name:"Narrow.one", url:"https://narrow.one/"},
-    {name:"FreeGames.org", url:"https://freegames.org/"},
-    {name:"Cool Math Games", url:"https://www.coolmathgames.com/"},
-    {name:"Territorial.io", url:"https://territorial.io/"},
-    {name:"Emupedia / EmuOS", url:"https://emupedia.net/beta/emuos/"},
-    {name:"IzzyGames", url:"https://www.izzygames.com/exhibit-of-sorrows-t6997.html?fullscreen=true"},
-    {name:"Desura Games", url:"https://www.desura.games/ipad-games"},
-    {name:"Kevin Games Slendrina", url:"https://kevin.games/slendrina-must-die-the-cellar"},
-    {name:"Toogame", url:"https://www.toogame.com/"},
-    {name:"Windows 93", url:"http://v1.windows93.net/"},
-    {name:"Polytrack", url:"https://www.kodub.com/apps/polytrack"},
-    {name:"Now.gg", url:"https://now.gg/"},
-    {name:"PlayRetroGames", url:"https://playretrogames.online/"},
-    {name:"Gamaverse Mobile", url:"https://gamaverse.com/mobile/"},
-    {name:"FreeRiderHD", url:"https://www.freeriderhd.com/"},
-    {name:"KBHGames", url:"https://kbhgames.com/"},
-    {name:"Pokemon Showdown", url:"https://play.pokemonshowdown.com/"},
-    {name:"Drift.io", url:"https://drift.io/?room=nedRVhuAq"},
-    {name:"Time Shooter 2", url:"https://watchdocumentaries.com/time-shooter-2-game/"},
-    {name:"Combat Reloaded", url:"https://www.gameflare.com/online-game/combat-reloaded/"},
-    {name:"Tetris", url:"https://www.lumpty.com/amusements/games/tetris/tetris.html"},
-    {name:"ArcadeSpot", url:"https://arcadespot.com/"},
-    {name:"MCraft", url:"https://mcraft.fun/"},
-    {name:"Two Player Games", url:"https://www.twoplayergames.org/"},
-    {name:"Slowroads.io", url:"https://slowroads.io/"},
-    {name:"Games Unblocked", url:"https://sites.google.com/view/games-unblocked/"},
-    {name:"Slice-Master.io", url:"https://slice-master.io/"},
-    {name:"BasketBros.io", url:"https://basketbrosio.com/"},
-    {name:"GameSnacks", url:"https://gamesnacks.com/"},
-    {name:"Yapi Games", url:"https://www.yapigames.com/mobilegames/"},
-    {name:"NoInternetGame", url:"https://nointernetgame.com/"},
-    {name:"CatMario", url:"https://catmario.eu/"},
-    {name:"PCJS", url:"https://www.pcjs.org/blog/2015/09/21/"},
-    {name:"VirtualXP", url:"https://lrusso.github.io/VirtualXP/VirtualXP.htm"},
-    {name:"Elgoog", url:"https://elgoog.im/"},
-    {name:"MyEmulator", url:"https://myemulator.onl/"},
-    {name:"Internet Arcade", url:"https://archive.org/details/internetarcade"},
-    {name:"RomsFun", url:"https://romsfun.com/"},
-    {name:"Watch Documentaries Games", url:"https://watchdocumentaries.com/games/"},
-    {name:"Gameflare Hub", url:"https://www.gameflare.com/"},
-    {name:"PlayHop", url:"https://playhop.com/"},
-    {name:"Survival Race", url:"https://www.onlinegames.io/survival-race/index.html"},
-    {name:"Miniclip", url:"https://www.miniclip.com/"},
-    {name:"Skibidi.io", url:"https://skibidi.io/games"},
-    {name:"Eaglercraft", url:"https://eaglercraft.q13x.com/1.8-js/?retina=true"},
-    {name:"MathPlayZone Arcade", url:"https://mathplayzone.com/arcade/"},
-    {name:"CookieClicker.one", url:"https://cookieclicker.one/"},
-    {name:"AngusNicNeven", url:"https://angusnicneven.com/"},
-    {name:"Pokerogue.io", url:"https://pokerogue.io/"},
-    {name:"Tetr.io", url:"https://tetr.io/"},
-    {name:"UG17 Games", url:"https://ug17.github.io/"},
-    {name:"MAFA.com", url:"https://www.mafa.com/"},
-    {name:"Crossy-Road.io", url:"https://crossy-road.io/"},
-    {name:"Crossy-Road", url:"https://crossy-road.com/"},
-    {name:"Games-Site", url:"https://games-site.github.io/"},
-    {name:"AzGames.io", url:"https://azgames.io/?gid=S50"},
-    {name:"Uptoplay.net", url:"https://uptoplay.net/"},
-    {name:"Mario 64 Online", url:"https://red404441.github.io/Mario64-online/"},
-	 {name:"Osu!", url:"https://webosu.online/"},
-	 {name:"Kahoot bot", url:"https://kahootbot.net/"},
-	{name:"1games", url:"https://1games.io/"},
-	{name:"Veck.io", url:"https://veck.io/"},
-	{name:"Ant games", url:"https://ant.games/"},
-	{name:"Frutiger Aero", url:"https://frutigeraeroarchive.org/"},
-	{name:"Duck Math", url:"https://duckmath.org/"},
-	{name:"GN Math", url:"https://gn-math.github.io/"},
-	{name:"Mesa Redux", url:"https://mesaredux.duccman99.workers.dev/"}, 
-	{name:"4ian Games", url:"https://github.com/4ian/games?tab=readme-ov-file#user-content-point-and-click"}, 
-	{name:"AllGames", url:"https://allgamesgithub.gitlab.io/"},
-	{name:"Trilarion Games", url:"https://trilarion.github.io/opensourcegames/"}, 
-	{name:"Bobeff Games", url:"https://github.com/bobeff/open-source-games"}, 
-	{name:"HTML5 Games", url:"https://html5-games.github.io/"},
-	{name:"Kaigani Games", url:"https://github.com/kaigani/HTML5-games-list"},
-	{name:"Unblocked GG", url:"https://unblockedgamesgg.github.io/"}, 
-	{name:"Free Unblocked",url:"https://freeunblockedgames.github.io/"},
-	{name:"OS online", url:"https://bellard.org/jslinux/"},
-	{name:"BloxD", url:"https://bloxd.io/"},
-	{name:"Smash Karts", url:"https://smashkarts.io/"},
-	{name:"Memory Games", url:"https://memory.toys/"},
-	{name:"YoHoHo", url:"https://yohoho.io/"},
-	{name:"Growden", url:"https://growden.io/"},
-	{name:"Overtide", url:"https://overtide.io/"},
-	{name:"Poxel", url:"https://poxel.io/"},
-	{name:"KourStrike", url:"https://kourstrike.io/"},
-	{name:"FoodStars", url:"https://foodstars.io/"},
-	{name:"2v2", url:"https://2v2.io/"},
-	{name:"FreebieGames", url:"https://freebie.games/"},
-	{name: "Among Us",               url: "https://scratch.mit.edu/projects/523967150/" },
-    { name: "PIXEL VALLEY Online",    url: "https://scratch.mit.edu/projects/551905179/" },
-    { name: "Getting Over It Online", url: "https://scratch.mit.edu/projects/390983761/" },
-    { name: "Downgrade2 Online",      url: "https://turbowarp.org/1115559391/fullscreen?fps=60&clones=Infinity&limitless&hqpen&size=640x360" },
+'use strict';
+
+/* ======================================================================
+   ██████╗  █████╗ ████████╗ █████╗
+   ██╔══██╗██╔══██╗╚══██╔══╝██╔══██╗
+   ██║  ██║███████║   ██║   ███████║
+   ██║  ██║██╔══██║   ██║   ██╔══██║
+   ██████╔╝██║  ██║   ██║   ██║  ██║
+   ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝
+
+   HOW TO ADD LINKS
+   ─────────────────────────────────────────────────────────────────────
+   Add a new entry inside the LINKS array below:
+     { name:"Game Name", url:"https://example.com/", cat:"hub", added:"2025-01-01" },
+
+   Fields:
+     name   (required)  Display name
+     url    (required)  Full URL including https://
+     cat    (required)  Category key — see CAT_LABELS below
+     added  (optional)  ISO date string — shows a "New" badge for 14 days
+
+   HOW TO ADD A CATEGORY
+   ─────────────────────────────────────────────────────────────────────
+   1. Choose a short key, e.g.  "action"
+   2. Add it to CAT_LABELS:     action: 'Action',
+   3. Use it on links:          cat:"action"
+   The filter button appears automatically — no other changes needed.
+
+   ⚠  Every entry needs a comma at the end (except the very last one).
+   ====================================================================== */
+
+const LINKS = [
+  /* ── .io Games ─────────────────────────────────────────────────── */
+  { name:"Diep.io",              url:"https://diep.io/",                      cat:"io" },
+  { name:"Wings.io",             url:"https://wings.io/",                     cat:"io" },
+  { name:"Deeeep.io",            url:"https://deeeep.io/",                    cat:"io" },
+  { name:"Brutal.io",            url:"https://brutal.io/",                    cat:"io" },
+  { name:"Paper.io",             url:"https://paper-io.com/",                 cat:"io" },
+  { name:"Slither.io",           url:"https://slither.io/",                   cat:"io" },
+  { name:"Yorg.io",              url:"https://yorg.io/",                      cat:"io" },
+  { name:"Venge.io",             url:"https://venge.io/",                     cat:"io" },
+  { name:"Warbot.io",            url:"https://warbot.io/",                    cat:"io" },
+  { name:"Garlic.io",            url:"https://garlic.io/",                    cat:"io" },
+  { name:"Snake.io",             url:"https://snake.io/",                     cat:"io" },
+  { name:"Zombs.io",             url:"https://zombs.io/",                     cat:"io" },
+  { name:"Hordes.io",            url:"https://hordes.io/",                    cat:"io" },
+  { name:"Kour.io",              url:"https://kour.io/",                      cat:"io" },
+  { name:"Deadshot.io",          url:"https://deadshot.io/",                  cat:"io" },
+  { name:"Narrow.one",           url:"https://narrow.one/",                   cat:"io" },
+  { name:"Territorial.io",       url:"https://territorial.io/",               cat:"io" },
+  { name:"Drift.io",             url:"https://drift.io/?room=nedRVhuAq",      cat:"io" },
+  { name:"BasketBros.io",        url:"https://basketbrosio.com/",             cat:"io" },
+  { name:"YoHoHo.io",            url:"https://yohoho.io/",                    cat:"io" },
+  { name:"Growden",              url:"https://growden.io/",                   cat:"io" },
+  { name:"Overtide",             url:"https://overtide.io/",                  cat:"io" },
+  { name:"Poxel",                url:"https://poxel.io/",                     cat:"io" },
+  { name:"KourStrike",           url:"https://kourstrike.io/",                cat:"io" },
+  { name:"FoodStars",            url:"https://foodstars.io/",                 cat:"io" },
+  { name:"2v2.io",               url:"https://2v2.io/",                       cat:"io" },
+  { name:"Veck.io",              url:"https://veck.io/",                      cat:"io" },
+
+  /* ── Classic Games ──────────────────────────────────────────────── */
+  { name:"Chess.com",            url:"https://www.chess.com/",                cat:"classic" },
+  { name:"Jetpack Joyride",      url:"https://jetpack-joyride.github.io/",    cat:"classic" },
+  { name:"Tetris",               url:"https://www.lumpty.com/amusements/games/tetris/tetris.html", cat:"classic" },
+  { name:"Card Games.io",        url:"https://cardgames.io/",                 cat:"classic" },
+  { name:"Polytrack",            url:"https://www.kodub.com/apps/polytrack",  cat:"classic" },
+  { name:"Pokémon Showdown",     url:"https://play.pokemonshowdown.com/",     cat:"classic" },
+  { name:"FreeRiderHD",          url:"https://www.freeriderhd.com/",          cat:"classic" },
+  { name:"Slice Master",         url:"https://slice-master.io/",              cat:"classic" },
+  { name:"NoInternetGame",       url:"https://nointernetgame.com/",           cat:"classic" },
+  { name:"CatMario",             url:"https://catmario.eu/",                  cat:"classic" },
+  { name:"MCraft",               url:"https://mcraft.fun/",                   cat:"classic" },
+  { name:"Eaglercraft",          url:"https://eaglercraft.q13x.com/1.8-js/?retina=true", cat:"classic" },
+  { name:"Cookie Clicker",       url:"https://cookieclicker.one/",            cat:"classic" },
+  { name:"PokeRogue",            url:"https://pokerogue.io/",                 cat:"classic" },
+  { name:"Tetr.io",              url:"https://tetr.io/",                      cat:"classic" },
+  { name:"Crossy Road",          url:"https://crossy-road.io/",               cat:"classic" },
+  { name:"Mario 64 Online",      url:"https://red404441.github.io/Mario64-online/", cat:"classic" },
+  { name:"Osu!",                 url:"https://webosu.online/",                cat:"classic" },
+  { name:"BloxD",                url:"https://bloxd.io/",                     cat:"classic" },
+
+  /* ── Game Hubs / Portals ────────────────────────────────────────── */
+  { name:"Win10 Games Hub",      url:"https://win10.webjeet.me/",             cat:"hub" },
+  { name:"Armor Games",          url:"https://armorgames.com/",               cat:"hub" },
+  { name:"FreeGames.com",        url:"https://www.freegames.com/",            cat:"hub" },
+  { name:"Lagged.com",           url:"https://lagged.com/en/",                cat:"hub" },
+  { name:"GamePix",              url:"https://www.gamepix.com/",              cat:"hub" },
+  { name:"Pogo.com",             url:"https://www.pogo.com/",                 cat:"hub" },
+  { name:"Gamezop",              url:"https://www.gamezop.com/en",            cat:"hub" },
+  { name:"Jopi.com",             url:"https://www.jopi.com/",                 cat:"hub" },
+  { name:"Poki",                 url:"https://poki.ac/",                      cat:"hub" },
+  { name:"Friv2online",          url:"https://www.friv2online.com/poki-games",cat:"hub" },
+  { name:"FreeGames.org",        url:"https://freegames.org/",                cat:"hub" },
+  { name:"Cool Math Games",      url:"https://www.coolmathgames.com/",        cat:"hub" },
+  { name:"ArcadeSpot",           url:"https://arcadespot.com/",               cat:"hub" },
+  { name:"Now.gg",               url:"https://now.gg/",                       cat:"hub" },
+  { name:"PlayRetroGames",       url:"https://playretrogames.online/",        cat:"hub" },
+  { name:"Gamaverse Mobile",     url:"https://gamaverse.com/mobile/",         cat:"hub" },
+  { name:"KBHGames",             url:"https://kbhgames.com/",                 cat:"hub" },
+  { name:"Desura Games",         url:"https://www.desura.games/ipad-games",   cat:"hub" },
+  { name:"Toogame",              url:"https://www.toogame.com/",              cat:"hub" },
+  { name:"GameSnacks",           url:"https://gamesnacks.com/",               cat:"hub" },
+  { name:"Yapi Games",           url:"https://www.yapigames.com/mobilegames/",cat:"hub" },
+  { name:"Games Unblocked",      url:"https://sites.google.com/view/games-unblocked/", cat:"hub" },
+  { name:"Watch Doc Games",      url:"https://watchdocumentaries.com/games/", cat:"hub" },
+  { name:"Gameflare",            url:"https://www.gameflare.com/",            cat:"hub" },
+  { name:"PlayHop",              url:"https://playhop.com/",                  cat:"hub" },
+  { name:"Miniclip",             url:"https://www.miniclip.com/",             cat:"hub" },
+  { name:"GeForce Now",          url:"https://www.geforce.com/",              cat:"hub" },
+  { name:"AzGames",              url:"https://azgames.io/?gid=S50",           cat:"hub" },
+  { name:"Uptoplay",             url:"https://uptoplay.net/",                 cat:"hub" },
+  { name:"1games.io",            url:"https://1games.io/",                    cat:"hub" },
+  { name:"Ant Games",            url:"https://ant.games/",                    cat:"hub" },
+  { name:"4ian Games",           url:"https://github.com/4ian/games?tab=readme-ov-file", cat:"hub" },
+  { name:"AllGames",             url:"https://allgamesgithub.gitlab.io/",     cat:"hub" },
+  { name:"HTML5 Games",          url:"https://html5-games.github.io/",        cat:"hub" },
+  { name:"Unblocked GG",         url:"https://unblockedgamesgg.github.io/",   cat:"hub" },
+  { name:"Free Unblocked",       url:"https://freeunblockedgames.github.io/", cat:"hub" },
+  { name:"FreebieGames",         url:"https://freebie.games/",                cat:"hub" },
+  { name:"UG17 Games",           url:"https://ug17.github.io/",               cat:"hub" },
+  { name:"MAFA.com",             url:"https://www.mafa.com/",                 cat:"hub" },
+  { name:"Games-Site",           url:"https://games-site.github.io/",         cat:"hub" },
+
+  /* ── Fun / Miscellaneous ────────────────────────────────────────── */
+  { name:"QuickDraw",            url:"https://quickdraw.withgoogle.com/",     cat:"fun" },
+  { name:"Neal.fun",             url:"https://neal.fun/",                     cat:"fun" },
+  { name:"Akinator",             url:"https://en.akinator.com/",              cat:"fun" },
+  { name:"KoalaBeast",           url:"https://koalabeast.com/",               cat:"fun" },
+  { name:"Oasis Starting Point", url:"https://oasis.decart.ai/starting-point?journey=Dense+Forest", cat:"fun" },
+  { name:"Corru Observer",       url:"https://corru.observer/",               cat:"fun" },
+  { name:"Among Us Online",      url:"https://amongusplay.online/",           cat:"fun" },
+  { name:"Time Shooter 2",       url:"https://watchdocumentaries.com/time-shooter-2-game/", cat:"fun" },
+  { name:"Combat Reloaded",      url:"https://www.gameflare.com/online-game/combat-reloaded/", cat:"fun" },
+  { name:"Two Player Games",     url:"https://www.twoplayergames.org/",       cat:"fun" },
+  { name:"Slowroads.io",         url:"https://slowroads.io/",                 cat:"fun" },
+  { name:"Exhibit of Sorrows",   url:"https://www.izzygames.com/exhibit-of-sorrows-t6997.html?fullscreen=true", cat:"fun" },
+  { name:"Slendrina: The Cellar",url:"https://kevin.games/slendrina-must-die-the-cellar", cat:"fun" },
+  { name:"Smash Karts",          url:"https://smashkarts.io/",                cat:"fun" },
+  { name:"Skibidi.io",           url:"https://skibidi.io/games",              cat:"fun" },
+  { name:"AngusNicNeven",        url:"https://angusnicneven.com/",            cat:"fun" },
+  { name:"Elgoog",               url:"https://elgoog.im/",                    cat:"fun" },
+  { name:"Frutiger Aero Archive",url:"https://frutigeraeroarchive.org/",      cat:"fun" },
+  { name:"Mesa Redux",           url:"https://mesaredux.duccman99.workers.dev/", cat:"fun" },
+  { name:"Survival Race",        url:"https://www.onlinegames.io/survival-race/index.html", cat:"fun" },
+  { name:"Among Us (Scratch)",   url:"https://scratch.mit.edu/projects/523967150/", cat:"fun" },
+  { name:"PIXEL VALLEY Online",  url:"https://scratch.mit.edu/projects/551905179/", cat:"fun" },
+  { name:"Getting Over It Online",url:"https://scratch.mit.edu/projects/390983761/", cat:"fun" },
+  { name:"Downgrade 2",          url:"https://turbowarp.org/1115559391/fullscreen?fps=60&clones=Infinity&limitless&hqpen&size=640x360", cat:"fun" },
+
+  /* ── Retro / OS / Emulation ─────────────────────────────────────── */
+  { name:"EmuOS",                url:"https://emupedia.net/beta/emuos/",      cat:"retro" },
+  { name:"Windows 93",           url:"https://v1.windows93.net/",             cat:"retro" },
+  { name:"VirtualXP",            url:"https://lrusso.github.io/VirtualXP/VirtualXP.htm", cat:"retro" },
+  { name:"PCJS",                 url:"https://www.pcjs.org/blog/2015/09/21/", cat:"retro" },
+  { name:"Lexaloffle",           url:"https://www.lexaloffle.com/bbs/?pid=136646#playing", cat:"retro" },
+  { name:"MyEmulator",           url:"https://myemulator.onl/",               cat:"retro" },
+  { name:"Internet Arcade",      url:"https://archive.org/details/internetarcade", cat:"retro" },
+  { name:"RomsFun",              url:"https://romsfun.com/",                  cat:"retro" },
+  { name:"JS Linux",             url:"https://bellard.org/jslinux/",          cat:"retro" },
+
+  /* ── Education ──────────────────────────────────────────────────── */
+  { name:"Maths Playground",     url:"https://www.mathplayground.com/fun-skill-games.html", cat:"edu" },
+  { name:"MathPlayZone Arcade",  url:"https://mathplayzone.com/arcade/",      cat:"edu" },
+  { name:"Kahoot Bot",           url:"https://kahootbot.net/",                cat:"edu" },
+  { name:"Duck Math",            url:"https://duckmath.org/",                 cat:"edu" },
+  { name:"GN Math",              url:"https://gn-math.github.io/",            cat:"edu" },
+  { name:"Memory Games",         url:"https://memory.toys/",                  cat:"edu" },
+
+  /* ── Simulation / RPG ───────────────────────────────────────────── */
+  { name:"BitLife",              url:"https://bitlifeonline.io/home",          cat:"sim" },
+  { name:"Fallen London",        url:"https://www.fallenlondon.com/",          cat:"sim" },
+  { name:"Granblue Fantasy",     url:"https://granbluefantasy.jp/sp/en/",      cat:"sim" },
+
+  /* -- cloud gaming ---------------------------------------------------*/
+  {name:"Geforce", url:"https://play.geforcenow.com/mall/", cat:"cloud", added:"2025-02-23"}, 
 ];
 
-/* helper: safe favicon source (with XP-esque fallback) */
-function favUrl(u){
-  try{
-    const p = new URL(u);
-    return `https://www.google.com/s2/favicons?domain=${p.hostname}&sz=64`;
-  }catch(e){
-    return '';
-  }
+/* ======================================================================
+   CATEGORIES
+   Add new entries here — the filter button appears automatically.
+   Format:  key: 'Label shown in UI',
+   ====================================================================== */
+const CAT_LABELS = {
+  all:     'All',
+  io:      '.io Games',
+  hub:     'Hubs',
+  classic: 'Classics',
+  fun:     'Fun',
+  retro:   'Retro / OS',
+  edu:     'Education',
+  sim:     'Simulation',
+  /* ↓ Add new categories here ↓ */
+ cloud:  'Cloud Gaming',
+}; 
+/* ======================================================================
+   CONFIG — tweak behaviour without touching the rest of the code
+   ====================================================================== */
+const CONFIG = {
+  LOCK_CODE:        '4589',      // access code (numeric string)
+  NEW_BADGE_DAYS:   14,          // days after `added` date to show "New" badge
+  RECENT_MAX:       8,           // max recently-visited items to show
+  AUDIO_SRC:        'Music.mp3', // path to music file (relative to index.html)
+  AUDIO_VOLUME:     0.55,        // 0.0–1.0
+  GITHUB_REPO:      'Red404441/Games-gallery-', // for "Report broken link" issues
+};
+
+/* ======================================================================
+   UTILITIES
+   ====================================================================== */
+const $ = id => document.getElementById(id);
+
+function favUrl(url){
+  try{ return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=64`; }
+  catch{ return ''; }
 }
-
-/* XP-style SVG fallback as data URL (a tiny "folder/glass" feel) */
-const xpFallbackSvg = encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect rx="8" ry="8" width="64" height="64" fill="#eaf6ff"/><g transform="translate(6,10)"><rect width="44" height="24" rx="4" fill="#d8eefc"/><rect y="20" width="44" height="14" rx="4" fill="#e9f7ff"/></g></svg>`
-);
-
-/* Render tiles (fast, accessible). On first render give pop animation; subsequent renders skip animation to avoid DOM thrash. */
-const grid = document.getElementById('linkGrid');
-let initialRendered = false;
-function normalizeDisplayName(name){
-  // trim, collapse whitespace, keep user's chosen casing mostly
-  return name.replace(/\s+/g,' ').trim();
+function hostOf(url){
+  try{ return new URL(url).hostname.replace(/^www\./, ''); }
+  catch{ return url; }
 }
-function render(list){
-  grid.innerHTML = '';
-  list.forEach((l,i)=>{
-    const a = document.createElement('a');
-    a.className = 'tile';
-    if(!initialRendered) a.classList.add('pop');
-    a.href = l.url;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    a.setAttribute('aria-label', l.name);
+const XP_FALLBACK = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect rx='7' width='40' height='40' fill='%23daf0ff'/%3E%3Crect x='6' y='12' width='28' height='16' rx='4' fill='%23b8e3f8'/%3E%3C/svg%3E`;
 
-    const ic = document.createElement('div'); ic.className = 'icon';
-    const im = document.createElement('img'); im.alt = l.name + ' icon';
-    im.src = favUrl(l.url);
-    // if favicon fails, swap to our XP-ish fallback
-    im.onerror = function(){
-      this.onerror=null;
-      this.src = `data:image/svg+xml;utf8,${xpFallbackSvg}`;
-    };
-    ic.appendChild(im);
-
-    const t = document.createElement('div'); t.className = 'txt';
-    const title = document.createElement('div'); title.className='title';
-    title.textContent = normalizeDisplayName(l.name);
-    const sub = document.createElement('div'); sub.className='sub';
-    try{ sub.textContent = (new URL(l.url)).hostname.replace('www.',''); }catch(e){ sub.textContent=l.url; }
-    t.appendChild(title); t.appendChild(sub);
-
-    a.appendChild(ic); a.appendChild(t);
-    grid.appendChild(a);
-  });
-
-  Array.from(grid.querySelectorAll('.tile')).forEach(el => el.tabIndex = 0);
-  document.getElementById('resultsInfo').textContent = `${list.length} links`;
-  initialRendered = true;
-}
-
-/* initial render (all) */
-render(allLinks);
-
-/* ===== Search behaviour: debounce + case-insensitive substring + light fuzzy-ish split scoring ===== */
-const searchInput = document.getElementById('searchInput');
+function debounce(fn, ms){ let t; return (...a) => { clearTimeout(t); t = setTimeout(()=>fn(...a), ms); }; }
 
 function fuzzyScore(hay, needle){
-  // very small, fast fuzzy scoring: consecutive characters score more
-  hay = hay.toLowerCase();
-  needle = needle.toLowerCase();
-  if(!needle) return 0;
-  if(hay.includes(needle)) return 100 + (needle.length * 3);
-  // loose subsequence check
-  let i=0,j=0,score=0;
-  while(i<hay.length && j<needle.length){
-    if(hay[i] === needle[j]){ score += 2; j++; }
-    i++;
+  hay = hay.toLowerCase(); needle = needle.toLowerCase();
+  if(!needle) return 1;
+  if(hay.includes(needle)) return 100 + needle.length * 2;
+  let j = 0, s = 0;
+  for(let i = 0; i < hay.length && j < needle.length; i++) if(hay[i] === needle[j]){ s++; j++; }
+  return j === needle.length ? s : 0;
+}
+
+function isNew(added){
+  if(!added) return false;
+  const diff = (Date.now() - new Date(added).getTime()) / 86400000;
+  return diff >= 0 && diff <= CONFIG.NEW_BADGE_DAYS;
+}
+
+/* ── Toast ── */
+let toastTimer;
+function showToast(text, ms=2200){
+  $('toastMsg').textContent = text;
+  $('toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $('toast').classList.remove('show'), ms);
+}
+
+/* ── Persistent storage wrapper ── */
+const Store = {
+  get(k, fallback=null){ try{ const v=localStorage.getItem(k); return v!=null?JSON.parse(v):fallback; }catch{ return fallback; } },
+  set(k, v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch{} },
+};
+
+/* ======================================================================
+   STATE
+   ====================================================================== */
+let currentQuery = '';
+let currentCat   = 'all';
+let currentSort  = 'default';
+let currentView  = Store.get('gg_view','grid');   // 'grid' | 'list'
+let isCompact    = Store.get('gg_compact',false);
+let isDark       = Store.get('gg_dark',false);
+let favourites   = new Set(Store.get('gg_favs',[]));
+let recentLinks  = Store.get('gg_recent',[]);     // array of urls, most recent first
+
+/* ======================================================================
+   THEMING
+   ====================================================================== */
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  $('themeBtn').setAttribute('aria-pressed', String(isDark));
+  const icon = $('themeIcon');
+  if(isDark){
+    icon.setAttribute('d','M12 3v1m0 16v1m9-9h-1M4 12H3m15.36-6.36l-.7.7M6.34 17.66l-.7.7m12.02.02l-.7-.7M6.34 6.34l-.7-.7M17 12a5 5 0 1 1-10 0 5 5 0 0 1 10 0z');
+    icon.setAttribute('fill','none');
+    icon.setAttribute('stroke','var(--accent)');
+    icon.setAttribute('stroke-width','1.7');
+    icon.setAttribute('stroke-linecap','round');
+  } else {
+    icon.setAttribute('d','M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z');
+    icon.setAttribute('fill','var(--accent)');
+    icon.removeAttribute('stroke');
+    icon.removeAttribute('stroke-width');
+    icon.removeAttribute('stroke-linecap');
   }
-  if(j === needle.length) return score;
-  return 0;
 }
 
-function doFilter(q){
-  if(!q) { render(allLinks); return; }
-  const qtrim = q.trim().toLowerCase();
-  // search by name primarily, then hostname. score and sort descending
-  const candidates = allLinks.map(l => {
-    const name = l.name || '';
-    const host = (() => { try{ return (new URL(l.url)).hostname }catch(e){return l.url;} })();
-    const score = Math.max(fuzzyScore(name, qtrim), fuzzyScore(host, qtrim));
-    return {l, score};
-  }).filter(x => x.score > 0).sort((a,b)=>b.score - a.score).map(x=>x.l);
-  render(candidates);
+function applyCompact(){
+  document.documentElement.setAttribute('data-compact', String(isCompact));
+  $('compactBtn').setAttribute('aria-pressed', String(isCompact));
 }
 
-/* debounce helper */
-function debounce(fn, wait){
-  let t = null;
-  return function(...args){
-    clearTimeout(t);
-    t = setTimeout(()=>fn.apply(this,args), wait);
-  };
+function applyView(){
+  $('app').setAttribute('data-view', currentView);
+  $('viewBtn').setAttribute('aria-pressed', String(currentView === 'list'));
 }
 
-const debouncedFilter = debounce((val)=> doFilter(val), 120);
-searchInput.addEventListener('input', (e) => debouncedFilter(e.target.value));
+$('themeBtn').addEventListener('click', () => {
+  isDark = !isDark; Store.set('gg_dark', isDark); applyTheme(); showToast(isDark ? '🌙 Dark mode on' : '☀️ Light mode on');
+});
+$('compactBtn').addEventListener('click', () => {
+  isCompact = !isCompact; Store.set('gg_compact', isCompact); applyCompact(); render();
+});
+$('viewBtn').addEventListener('click', () => {
+  currentView = currentView === 'grid' ? 'list' : 'grid';
+  Store.set('gg_view', currentView); applyView();
+});
 
-/* quick focus shortcut: press / to focus search (like many launchers) */
-document.addEventListener('keydown', (e) => {
-  if(e.key === '/' && document.activeElement !== searchInput){
-    e.preventDefault();
-    searchInput.focus();
-    searchInput.select();
+/* ======================================================================
+   DAILY FEATURED GAME
+   Rotates deterministically based on date — same game all day for everyone.
+   ====================================================================== */
+function setupFeatured(){
+  const today = new Date();
+  const seed  = today.getFullYear() * 10000 + (today.getMonth()+1) * 100 + today.getDate();
+  const idx   = seed % LINKS.length;
+  const game  = LINKS[idx];
+  $('featuredName').textContent = game.name;
+  $('featuredHost').textContent = hostOf(game.url);
+  $('featuredLink').href = game.url;
+  // emoji from category
+  const emojis = { io:'🕹️', hub:'🗂️', classic:'👾', fun:'🎉', retro:'💾', edu:'📚', sim:'🌍' };
+  $('featuredIcon').textContent = emojis[game.cat] || '🎮';
+}
+
+/* ======================================================================
+   RECENTLY VISITED
+   ====================================================================== */
+function trackVisit(url){
+  recentLinks = [url, ...recentLinks.filter(u => u !== url)].slice(0, CONFIG.RECENT_MAX);
+  Store.set('gg_recent', recentLinks);
+}
+
+function renderRecent(){
+  const strip = $('recentStrip');
+  const section = $('recentSection');
+  if(!recentLinks.length){ section.style.display='none'; return; }
+  section.style.display = '';
+  strip.innerHTML = '';
+  recentLinks.forEach(url => {
+    const link = LINKS.find(l => l.url === url);
+    if(!link) return;
+    const a = document.createElement('a');
+    a.className = 'recent-chip';
+    a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.setAttribute('aria-label', link.name);
+    a.addEventListener('click', () => trackVisit(url));
+    const img = document.createElement('img');
+    img.src = favUrl(url); img.alt = ''; img.loading = 'lazy';
+    img.onerror = () => { img.style.display='none'; };
+    a.appendChild(img);
+    a.appendChild(document.createTextNode(link.name));
+    strip.appendChild(a);
+  });
+}
+
+/* ======================================================================
+   FILTER BUTTONS
+   ====================================================================== */
+function buildFilters(){
+  const bar = $('filterBar');
+  const cats = Object.keys(CAT_LABELS);
+  cats.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat==='all'?' active':'');
+    btn.textContent = CAT_LABELS[cat];
+    btn.dataset.cat = cat;
+    btn.setAttribute('aria-pressed', String(cat==='all'));
+    btn.addEventListener('click', () => {
+      currentCat = cat;
+      bar.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.cat===cat);
+        b.setAttribute('aria-pressed', String(b.dataset.cat===cat));
+      });
+      render();
+    });
+    bar.appendChild(btn);
+  });
+}
+
+/* ======================================================================
+   SORT & FILTER LOGIC
+   ====================================================================== */
+function getFiltered(){
+  let list = [...LINKS];
+
+  // Category
+  if(currentCat !== 'all') list = list.filter(l => l.cat === currentCat);
+
+  // Search
+  if(currentQuery.trim()){
+    const q = currentQuery.trim();
+    list = list
+      .map(l => ({ l, s: Math.max(fuzzyScore(l.name,q), fuzzyScore(hostOf(l.url),q)) }))
+      .filter(x => x.s > 0)
+      .sort((a,b) => b.s - a.s)
+      .map(x => x.l);
+    return list;
+  }
+
+  // Sort
+  if(currentSort === 'az') list.sort((a,b) => a.name.localeCompare(b.name));
+  else if(currentSort === 'za') list.sort((a,b) => b.name.localeCompare(a.name));
+  else if(currentSort === 'favs'){
+    list.sort((a,b) => {
+      const af = favourites.has(a.url) ? 0 : 1;
+      const bf = favourites.has(b.url) ? 0 : 1;
+      return af - bf;
+    });
+  }
+
+  return list;
+}
+
+/* ======================================================================
+   RENDER
+   ====================================================================== */
+const grid  = $('linkGrid');
+const empty = $('emptyState');
+
+function render(){
+  const list  = getFiltered();
+  const total = list.length;
+
+  $('resultsCount').textContent = total === LINKS.length
+    ? `${total} games`
+    : `${total} of ${LINKS.length} games`;
+  $('activeFilterLabel').textContent = currentCat !== 'all'
+    ? `Showing: ${CAT_LABELS[currentCat] || currentCat}`
+    : '';
+
+  if(!total){ grid.innerHTML=''; empty.classList.add('show'); return; }
+  empty.classList.remove('show');
+
+  const frag = document.createDocumentFragment();
+  list.forEach((l, i) => {
+    const isFav = favourites.has(l.url);
+
+    const a = document.createElement('a');
+    a.className = 'tile' + (isFav?' fav-tile':'');
+    a.href = l.url; a.target='_blank'; a.rel='noopener noreferrer';
+    a.setAttribute('role','listitem');
+    a.setAttribute('aria-label', l.name);
+    a.style.animationDelay = `${Math.min(i*16,280)}ms`;
+
+    // Track visit on click
+    a.addEventListener('click', () => { trackVisit(l.url); renderRecent(); });
+
+    // Icon
+    const iconDiv = document.createElement('div'); iconDiv.className='tile-icon';
+    const img = document.createElement('img'); img.alt=''; img.loading='lazy';
+    img.src = favUrl(l.url);
+    img.onerror = () => { img.onerror=null; img.src=XP_FALLBACK; };
+    iconDiv.appendChild(img);
+
+    // Body
+    const body = document.createElement('div'); body.className='tile-body';
+    const nameEl = document.createElement('div'); nameEl.className='tile-name'; nameEl.textContent=l.name;
+    const hostEl = document.createElement('div'); hostEl.className='tile-host'; hostEl.textContent=hostOf(l.url);
+    body.appendChild(nameEl); body.appendChild(hostEl);
+
+    // Favourite button
+    const favBtn = document.createElement('button');
+    favBtn.className = 'tile-fav' + (isFav?' active':'');
+    favBtn.title = isFav ? 'Remove from favourites' : 'Add to favourites';
+    favBtn.setAttribute('aria-label', isFav ? `Remove ${l.name} from favourites` : `Favourite ${l.name}`);
+    favBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="${isFav?'none':'var(--text-soft)'}" stroke-width="1.5" fill="${isFav?'var(--star-active)':'none'}"/></svg>`;
+    favBtn.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      if(favourites.has(l.url)){ favourites.delete(l.url); showToast(`Removed from favourites`); }
+      else{ favourites.add(l.url); SFX.fav(); showToast(`⭐ Added to favourites`); }
+      Store.set('gg_favs', [...favourites]);
+      render();
+    });
+
+    // Report button
+    const reportBtn = document.createElement('button');
+    reportBtn.className = 'tile-report';
+    reportBtn.title = 'Report broken link';
+    reportBtn.setAttribute('aria-label', `Report broken link: ${l.name}`);
+    reportBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M12 8v5" stroke="var(--danger)" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="var(--danger)"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="var(--danger)" stroke-width="1.5" stroke-linejoin="round"/></svg> Report`;
+    reportBtn.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      const title = encodeURIComponent(`Broken link: ${l.name}`);
+      const body  = encodeURIComponent(`**Link:** [${l.name}](${l.url})\n**Issue:** This link appears to be broken or unavailable.\n\n_Reported via the Game Gallery._`);
+      window.open(`https://github.com/${CONFIG.GITHUB_REPO}/issues/new?title=${title}&body=${body}`, '_blank', 'noopener');
+    });
+
+    // "New" badge
+    if(isNew(l.added)){
+      const badge = document.createElement('div');
+      badge.className='tile-badge-new'; badge.textContent='NEW';
+      a.appendChild(badge);
+    }
+
+    a.appendChild(iconDiv); a.appendChild(body); a.appendChild(favBtn); a.appendChild(reportBtn);
+    frag.appendChild(a);
+  });
+
+  grid.innerHTML = '';
+  grid.appendChild(frag);
+}
+
+/* ======================================================================
+   SEARCH
+   ====================================================================== */
+const searchInput = $('searchInput');
+searchInput.addEventListener('input', debounce(e => { currentQuery=e.target.value; render(); }, 100));
+document.addEventListener('keydown', e => {
+  if(e.key==='/' && document.activeElement!==searchInput && !document.body.classList.contains('locked')){
+    e.preventDefault(); searchInput.focus(); searchInput.select();
+  }
+  if(e.key==='Escape' && document.activeElement===searchInput){
+    searchInput.value=''; currentQuery=''; render();
   }
 });
 
-/* Optional: keyboard navigation inside grid (arrows) */
-(function arrowNav(){
-  const gridEl = document.getElementById('linkGrid');
-  gridEl.addEventListener('keydown', function(e){
-    const items = Array.from(gridEl.querySelectorAll('.tile'));
-    const idx = items.indexOf(document.activeElement);
-    if(idx === -1) return;
-    const cols = Math.max(1, Math.round(gridEl.clientWidth / 240));
-    if(e.key === 'ArrowRight'){ e.preventDefault(); items[Math.min(idx+1, items.length-1)].focus(); }
-    if(e.key === 'ArrowLeft'){ e.preventDefault(); items[Math.max(idx-1, 0)].focus(); }
-    if(e.key === 'ArrowDown'){ e.preventDefault(); items[Math.min(idx+cols, items.length-1)].focus(); }
-    if(e.key === 'ArrowUp'){ e.preventDefault(); items[Math.max(idx-cols, 0)].focus(); }
-  });
-})();
+// Sort
+$('sortSelect').addEventListener('change', e => { currentSort=e.target.value; render(); });
 
-/* ---------------- Audio: local Music.mp3 asset, aero bubble UI ----------------
-   - file expected at same directory: Music.mp3
-   - play is attempted on unlock (counts as user gesture)
-   - user can toggle via bubble; state remembered per-tab (but audio won't auto-resume across reload if browser blocks)
-*/
-const audioBtn = document.getElementById('audioBtn');
-const audioIcon = document.getElementById('audioIcon');
-let audio = null;
-let audioPlaying = false;
-const AUDIO_SRC = 'Music.mp3'; // drop Music.mp3 in your repo (same folder as this file)
+// Keyboard grid navigation
+grid.addEventListener('keydown', e => {
+  const items = [...grid.querySelectorAll('.tile')];
+  const idx   = items.indexOf(document.activeElement);
+  if(idx===-1) return;
+  const cols = Math.max(1, Math.round(grid.clientWidth / 214));
+  const map  = { ArrowRight:1, ArrowLeft:-1, ArrowDown:cols, ArrowUp:-cols };
+  if(map[e.key] !== undefined){
+    e.preventDefault();
+    items[Math.min(Math.max(idx+map[e.key],0), items.length-1)]?.focus();
+  }
+});
+
+/* ======================================================================
+   RANDOM GAME SPINNER
+   ====================================================================== */
+function pickRandom(){
+  const list = getFiltered().length ? getFiltered() : LINKS;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+function openSpinner(){
+  const game = pickRandom();
+  $('spinnerName').textContent = game.name;
+  $('spinnerHost').textContent = hostOf(game.url);
+  $('spinnerGo').href = game.url;
+  $('spinnerOverlay').classList.add('open');
+}
+
+$('randomBtn').addEventListener('click', () => { SFX.random(); openSpinner(); });
+$('spinnerAgain').addEventListener('click', () => {
+  $('spinnerName').textContent='…';
+  setTimeout(() => {
+    const g = pickRandom();
+    $('spinnerName').textContent = g.name;
+    $('spinnerHost').textContent = hostOf(g.url);
+    $('spinnerGo').href = g.url;
+  }, 200);
+});
+$('spinnerClose').addEventListener('click', () => $('spinnerOverlay').classList.remove('open'));
+$('spinnerOverlay').addEventListener('click', e => { if(e.target===$('spinnerOverlay')) $('spinnerOverlay').classList.remove('open'); });
+
+/* ======================================================================
+   AUDIO
+   ====================================================================== */
+const audioBtn    = $('audioBtn');
+const speakerWaves= $('speakerWaves');
+const muteX       = $('muteX');
+let audio   = null;
+let playing = false;
 
 function createAudio(){
   if(audio) return;
-  audio = new Audio(AUDIO_SRC);
-  audio.loop = true;
-  audio.preload = 'auto';
-  audio.volume = 0.6;
-  audio.addEventListener('play', () => {
-    audioPlaying = true;
-    audioBtn.setAttribute('aria-pressed','true');
-    setAudioIconState(true);
-    showToast('Music playing');
-  });
-  audio.addEventListener('pause', () => {
-    audioPlaying = false;
-    audioBtn.setAttribute('aria-pressed','false');
-    setAudioIconState(false);
-    showToast('Music paused');
-  });
-  audio.addEventListener('error', () => {
-    // e.g., file missing -> inform user
-    showToast('Audio file not found (drop Music.mp3 into the repo).', 4000);
-    audio = null;
-    audioPlaying = false;
-    audioBtn.setAttribute('aria-pressed','false');
-    setAudioIconState(false);
-  });
+  audio = new Audio(CONFIG.AUDIO_SRC);
+  audio.loop=true; audio.volume=CONFIG.AUDIO_VOLUME; audio.preload='auto';
+  audio.addEventListener('play',  () => { playing=true;  muteX.style.display='none'; speakerWaves.style.display=''; audioBtn.setAttribute('aria-pressed','true');  showToast('♪ Music playing'); });
+  audio.addEventListener('pause', () => { playing=false; muteX.style.display='';     speakerWaves.style.display='none'; audioBtn.setAttribute('aria-pressed','false'); showToast('Music paused'); });
+  audio.addEventListener('error', () => { showToast('Music.mp3 not found — drop it in your repo.',4000); audio=null; playing=false; });
 }
 
-function setAudioIconState(isPlaying){
-  // swap between speaker and pause glyphs
-  if(isPlaying){
-    audioIcon.innerHTML = `<path d="M6 9v6h4l5 4V5L10 9H6z" fill="#0c3a52"/><rect x="17" y="8" width="2" height="8" rx="0.5" fill="#0c3a52"/><rect x="20" y="8" width="2" height="8" rx="0.5" fill="#0c3a52"/>`;
-  }else{
-    // single speaker icon (play-ready)
-    audioIcon.innerHTML = `<path d="M5 9v6h4l5 4V5L9 9H5z" fill="#0c3a52"/>`;
-  }
-}
-
-audioBtn.addEventListener('click', (e) => {
-  e.preventDefault();
+audioBtn.addEventListener('click', () => {
   createAudio();
-  if(!audio){
-    // probably error creating audio; createAudio will show toast
-    return;
-  }
-  if(audioPlaying){
-    audio.pause();
-  }else{
-    audio.play().catch(()=> {
-      // if browser blocks, we show toast — user needs to interact (but unlock is a gesture)
-      showToast('Browser prevented autoplay. Press play again or unlock the site first.', 3000);
-    });
-  }
+  if(!audio) return;
+  playing ? audio.pause() : audio.play().catch(() => showToast('Tap play again to start music.',3000));
 });
+function tryAutoplay(){ createAudio(); if(audio) audio.play().catch(()=>{}); }
 
-/* attempt autoplay after unlock or if previously unlocked in this session */
-function tryPlayAudio(){
-  try{
-    createAudio();
-    if(!audio) return;
-    audio.play().catch(() => {
-      // ignore; show subtle message if user expects it
-      showToast('Autoplay blocked by browser. Tap the play button to start audio.', 2800);
-    });
-  }catch(e){
-    // ignore errors
-  }
-}
+/* ======================================================================
+   LOCK
+   ====================================================================== */
+const overlay  = $('lockOverlay');
+const passInput= $('passInput');
+const errMsg   = $('errMsg');
 
-/* small toast helper */
-const toastEl = document.getElementById('toast');
-let toastTimer = null;
-function showToast(text, ms = 1700){
-  toastEl.textContent = text;
-  toastEl.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>{ toastEl.classList.remove('show'); }, ms);
-}
-
-/* ---------------- Lock overlay logic -------------- */
-const LOCK_CODE = '4589';
-const overlay = document.getElementById('lockOverlay');
-const passInput = document.getElementById('passInput');
-const passBtn = document.getElementById('passBtn');
-const errMsg = document.getElementById('errMsg');
-
-function unlock(remember = true){
-  // hide overlay and allow interaction
+function unlock(remember=true){
+  overlay.classList.add('hiding');
+  setTimeout(() => overlay.style.display='none', 420);
   document.body.classList.remove('locked');
-  overlay.style.display = 'none';
-  errMsg.style.display = 'none';
-  try{ if(remember) sessionStorage.setItem('gallery_unlocked','1'); }catch(e){}
-  // focus search for convenience
-  setTimeout(()=> {
-    try{ searchInput.focus(); }catch(e){} 
-  }, 40);
-  // attempt to auto-play audio (unlock counts as a user gesture)
-  tryPlayAudio();
-}
-
-function showError(text){
-  errMsg.textContent = text || 'Incorrect code — try again.';
-  errMsg.style.display = 'block';
-  // tiny shake animation (visual)
-  overlay.animate([{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}],{duration:260,iterations:1});
-  passInput.focus();
-  passInput.select();
+  errMsg.classList.remove('show');
+  if(remember){ try{ sessionStorage.setItem('gg_unlocked','1'); }catch(_){} }
+  setTimeout(() => searchInput.focus(), 80);
+  tryAutoplay();
+  SFX.unlock();
+  showToast('Welcome to the Gallery ✦', 2500);
 }
 
 function tryUnlock(){
-  const val = (passInput.value || '').trim();
-  if(val === LOCK_CODE){
+  if((passInput.value||'').trim() === CONFIG.LOCK_CODE){
     unlock(true);
-  }else{
-    showError('Incorrect code — try again.');
+  } else {
+    errMsg.classList.add('show');
+    SFX.error();
+    overlay.animate([{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'none'}],{duration:260});
+    passInput.focus(); passInput.select();
   }
 }
 
-/* button and enter handling */
-passBtn.addEventListener('click', tryUnlock);
-passInput.addEventListener('keydown', (e) => {
-  if(e.key === 'Enter'){ e.preventDefault(); tryUnlock(); }
-  if(e.key === 'Escape'){ e.preventDefault(); passInput.value=''; errMsg.style.display='none'; }
+$('passBtn').addEventListener('click', tryUnlock);
+passInput.addEventListener('keydown', e => {
+  if(e.key==='Enter'){ e.preventDefault(); tryUnlock(); }
+  if(e.key==='Escape'){ passInput.value=''; errMsg.classList.remove('show'); }
 });
-
-/* On load: check sessionStorage for existing unlock */
-window.addEventListener('load', () => {
-  try{
-    const unlocked = sessionStorage.getItem('gallery_unlocked') === '1';
-    if(unlocked){
-      // if session says unlocked, reveal and attempt audio play (no user gesture here may block)
-      unlock(false); // already unlocked this tab
-      // tryPlayAudio() will attempt to play, but browser may block autoplay without a gesture.
-      tryPlayAudio();
-    }else{
-      // ensure overlay visible and focus input
-      document.body.classList.add('locked');
-      overlay.style.display = 'flex';
-      passInput.focus();
-      passInput.select();
-    }
-  }catch(e){
-    // fallback: show overlay
-    document.body.classList.add('locked');
-    overlay.style.display = 'flex';
-    passInput.focus();
+document.addEventListener('focusin', e => {
+  if(document.body.classList.contains('locked') && !overlay.contains(e.target)){
+    e.stopPropagation(); passInput.focus();
   }
 });
 
-/* Prevent focusing underlying elements while locked */
-document.addEventListener('focusin', (e) => {
-  if(document.body.classList.contains('locked')){
-    if(!overlay.contains(e.target)){
-      e.stopPropagation();
-      passInput.focus();
+/* ======================================================================
+   SEASONAL THEMES
+   Detects current month and applies theme + particles automatically.
+   ====================================================================== */
+const SEASONS = {
+  //         month (0-based): [season, emoji, label, particles]
+  spring: { months:[2,3,4],  emoji:'🌸', label:'Spring', particles:'blossoms', chars:['🌸','🌺','🌼','🪷'] },
+  summer: { months:[5,6,7],  emoji:'☀️', label:'Summer', particles:null,       chars:[] },
+  autumn: { months:[8,9,10], emoji:'🍂', label:'Autumn', particles:'leaves',   chars:['🍂','🍁','🌿','🍃'] },
+  winter: { months:[11,0,1], emoji:'❄️', label:'Winter', particles:'snowflakes',chars:['❄','✦','*','·','❅'] },
+};
+
+function getSeason(){
+  const m = new Date().getMonth();
+  return Object.entries(SEASONS).find(([,v]) => v.months.includes(m)) || ['summer', SEASONS.summer];
+}
+
+function setupSeason(){
+  const [name, data] = getSeason();
+  document.documentElement.setAttribute('data-season', name);
+
+  // Update pill
+  const pill = $('seasonPill');
+  pill.textContent = `${data.emoji} ${data.label}`;
+
+  // Populate particles
+  if(data.particles && data.chars.length){
+    const container = $(data.particles);
+    const count = name === 'winter' ? 22 : 14;
+    for(let i = 0; i < count; i++){
+      const el = document.createElement('div');
+      el.className = data.particles.slice(0,-1); // 'snowflake','leaf','blossom'
+      el.textContent = data.chars[Math.floor(Math.random()*data.chars.length)];
+      el.style.left     = `${Math.random()*100}%`;
+      el.style.fontSize = `${0.7 + Math.random()*0.8}em`;
+      el.style.animationDuration  = `${6 + Math.random()*10}s`;
+      el.style.animationDelay     = `${-Math.random()*12}s`;
+      container.appendChild(el);
     }
   }
-});
 
-/* Accessibility: announce overlay presence */
-(function announceLock(){
-  const live = document.createElement('div');
-  live.setAttribute('aria-live','polite');
-  live.style.position='absolute'; live.style.left='-9999px';
-  live.textContent = 'This site is protected. Enter code to continue.';
-  document.body.appendChild(live);
+  // Summer: no extra particles, just default Aero sky
+  if(name === 'summer') $('seasonPill').style.display = 'none';
+}
+
+/* ======================================================================
+   SOUND EFFECTS
+   Subtle Web Audio API tones — no external files needed.
+   Respects prefers-reduced-motion (mutes sounds if motion is reduced).
+   ====================================================================== */
+const SFX = (() => {
+  let ctx = null;
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  function getCtx(){
+    if(!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    return ctx;
+  }
+
+  function tone(freq, type='sine', vol=0.08, duration=0.12, fadeOut=true){
+    if(prefersReducedMotion) return;
+    try{
+      const c  = getCtx();
+      const o  = c.createOscillator();
+      const g  = c.createGain();
+      o.connect(g); g.connect(c.destination);
+      o.type      = type;
+      o.frequency.setValueAtTime(freq, c.currentTime);
+      g.gain.setValueAtTime(vol, c.currentTime);
+      if(fadeOut) g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
+      o.start(c.currentTime);
+      o.stop(c.currentTime + duration);
+    } catch(e){ /* silently ignore — user hasn't interacted yet */ }
+  }
+
+  return {
+    hover()  { tone(880, 'sine',     0.04, 0.08); },
+    click()  { tone(660, 'triangle', 0.07, 0.10); },
+    fav()    { tone(1046,'sine',     0.06, 0.15); setTimeout(()=>tone(1318,'sine',0.05,0.12),80); },
+    unlock() { [523,659,784,1046].forEach((f,i) => setTimeout(()=>tone(f,'sine',0.06,0.18),i*70)); },
+    error()  { tone(220, 'sawtooth', 0.05, 0.18); },
+    random() { tone(784, 'sine',     0.06, 0.10); setTimeout(()=>tone(1046,'sine',0.05,0.10),90); },
+  };
 })();
 
+// Wire hover SFX to tiles (delegated)
+document.addEventListener('mouseover', e => {
+  if(e.target.closest('.tile')) SFX.hover();
+});
+document.addEventListener('mousedown', e => {
+  if(e.target.closest('.tile') || e.target.closest('button') || e.target.closest('a')) SFX.click();
+});
+
+/* ======================================================================
+   CUSTOM CURSOR
+   ====================================================================== */
+(function initCursor(){
+  const dot  = $('cursorDot');
+  const ring = $('cursorRing');
+  // Ring lags slightly behind for the Aero bubble feel
+  let rx=0,ry=0, tx=0,ty=0;
+
+  document.addEventListener('mousemove', e => {
+    tx = e.clientX; ty = e.clientY;
+    dot.style.left = tx+'px'; dot.style.top = ty+'px';
+  });
+
+  // Smooth ring follow
+  (function loop(){
+    rx += (tx-rx)*0.14;
+    ry += (ty-ry)*0.14;
+    ring.style.left = rx+'px'; ring.style.top = ry+'px';
+    requestAnimationFrame(loop);
+  })();
+
+  // Hover state
+  document.addEventListener('mouseover', e => {
+    const hoverable = e.target.closest('a,button,.tile,.filter-btn,.icon-btn,.contribute-btn,.unlock-btn,.recent-chip');
+    document.body.classList.toggle('cursor-hover', !!hoverable);
+  });
+
+  // Click state
+  document.addEventListener('mousedown', () => {
+    document.body.classList.add('cursor-click');
+    setTimeout(()=>document.body.classList.remove('cursor-click'), 200);
+  });
+
+  // Hide when leaving window
+  document.addEventListener('mouseleave', () => { dot.style.opacity='0'; ring.style.opacity='0'; });
+  document.addEventListener('mouseenter', () => { dot.style.opacity='1'; ring.style.opacity='1'; });
+})();
+
+/* ======================================================================
+   KONAMI CODE EASTER EGG  ↑↑↓↓←→←→BA
+   ====================================================================== */
+const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+let konamiIdx = 0;
+document.addEventListener('keydown', e => {
+  if(e.key === KONAMI[konamiIdx]){ konamiIdx++; if(konamiIdx===KONAMI.length){ konamiIdx=0; konamiEgg(); } }
+  else konamiIdx=0;
+});
+function konamiEgg(){
+  showToast('🎮 +30 lives! (just kidding)', 3000);
+  document.querySelectorAll('.tile').forEach((t,i) => {
+    setTimeout(()=>{
+      t.style.transition='transform .4s cubic-bezier(.2,.9,.3,1)';
+      t.style.transform='rotate(360deg) scale(0.95)';
+      setTimeout(()=>{ t.style.transform=''; }, 420);
+    }, i*18);
+  });
+}
+
+/* ======================================================================
+   INIT
+   ====================================================================== */
+window.addEventListener('DOMContentLoaded', () => {
+  // Apply saved preferences
+  applyTheme();
+  applyCompact();
+  applyView();
+
+  // Seasonal theme + particles
+  setupSeason();
+
+  // Build UI
+  buildFilters();
+  setupFeatured();
+  renderRecent();
+  render();
+
+  // Check session unlock
+  try{
+    if(sessionStorage.getItem('gg_unlocked')==='1'){
+      unlock(false); tryAutoplay();
+    } else {
+      passInput.focus();
+    }
+  } catch(_){ passInput.focus(); }
+});
 </script>
 </body>
 </html>
