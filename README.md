@@ -1,6 +1,6 @@
 # Game-gallery
 I made this site for fun in school using a collection of game links i made.
-credits go to ChatGPT since i have zero idea how to code and it helped alot and thanks to the tools in https://webcode.tools/html-generator
+Made with help from chatGPT and Claude.ai
 
 
 music credits go to https://catsystemcorp.bandcamp.com/album/palm-mall
