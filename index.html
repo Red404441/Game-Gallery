@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>CjFallons Ebook Reader</title>
+<title>The Game Gallery</title>
 
 <!-- =====================================================================
   PWA MANIFEST (inline for single-file deployment)
   To use: save this file as index.html in your repo root.
   Add a 192x192 and 512x512 icon.png to your repo for full PWA support.
 ====================================================================== -->
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="manifest" href="/site.webmanifest">
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" type="image/png" sizes="32x32" href="icon-192.png"/>
+<link rel="icon" type="image/png" sizes="16x16" href="icon-192.png"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
 <meta name="theme-color" content="#6ec6f5"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
@@ -902,11 +902,11 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
     </div>
   </header>
 
-  <!-- New Game Alert -->
-  <div class="featured-banner" id="featuredBanner" aria-label="New Game ">
+  <!-- Daily featured game -->
+  <div class="featured-banner" id="featuredBanner" aria-label="Game of the day">
     <div class="featured-icon" id="featuredIcon">🎮</div>
     <div class="featured-text">
-      <div class="featured-label">☀️ Newest Addtion To The Gallery</div>
+      <div class="featured-label">☀️ Game of the Day</div>
       <div class="featured-name" id="featuredName">Loading…</div>
       <div class="featured-host" id="featuredHost"></div>
     </div>
@@ -1157,9 +1157,6 @@ const LINKS = [
   { name:"BitLife",              url:"https://bitlifeonline.io/home",          cat:"sim" },
   { name:"Fallen London",        url:"https://www.fallenlondon.com/",          cat:"sim" },
   { name:"Granblue Fantasy",     url:"https://granbluefantasy.jp/sp/en/",      cat:"sim" },
-
-  /* -- cloud gaming ---------------------------------------------------*/
-  {name:"Geforce", url:"https://play.geforcenow.com/mall/", cat:"cloud", added:"2025-02-23"}, 
 ];
 
 /* ======================================================================
@@ -1177,8 +1174,8 @@ const CAT_LABELS = {
   edu:     'Education',
   sim:     'Simulation',
   /* ↓ Add new categories here ↓ */
- cloud:  'Cloud Gaming',
-}; 
+};
+
 /* ======================================================================
    CONFIG — tweak behaviour without touching the rest of the code
    ====================================================================== */
@@ -1219,9 +1216,29 @@ function fuzzyScore(hay, needle){
 
 function isNew(added){
   if(!added) return false;
-  const diff = (Date.now() - new Date(added).getTime()) / 86400000;
+  // Parse as local date (append T00:00 to avoid UTC offset shifting the date)
+  const diff = (Date.now() - new Date(added + 'T00:00').getTime()) / 86400000;
   return diff >= 0 && diff <= CONFIG.NEW_BADGE_DAYS;
 }
+
+/* ── Favicon lazy loader via IntersectionObserver ──
+   Tiles start with the XP fallback; favicons load only when scrolled into view.
+   Caches already-loaded URLs to avoid repeat requests on re-render. */
+const favCache = new Set();
+const faviconObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if(!entry.isIntersecting) return;
+    const img = entry.target;
+    const src = img.dataset.favSrc;
+    if(!src) return;
+    faviconObserver.unobserve(img);
+    if(favCache.has(src)){ img.src = src; return; }
+    const probe = new Image();
+    probe.onload  = () => { favCache.add(src); img.src = src; };
+    probe.onerror = () => { /* keep XP fallback */ };
+    probe.src = src;
+  });
+}, { rootMargin: '200px' }); // start loading 200px before tile enters viewport
 
 /* ── Toast ── */
 let toastTimer;
@@ -1298,16 +1315,24 @@ $('viewBtn').addEventListener('click', () => {
    Rotates deterministically based on date — same game all day for everyone.
    ====================================================================== */
 function setupFeatured(){
-  const today = new Date();
-  const seed  = today.getFullYear() * 10000 + (today.getMonth()+1) * 100 + today.getDate();
-  const idx   = seed % LINKS.length;
-  const game  = LINKS[idx];
-  $('featuredName').textContent = game.name;
-  $('featuredHost').textContent = hostOf(game.url);
-  $('featuredLink').href = game.url;
-  // emoji from category
+  // Show the most recently added link (highest `added` date).
+  // Falls back to the first link if none have an `added` field yet.
+  const withDates = LINKS.filter(l => l.added);
+  const game = withDates.length
+    ? withDates.reduce((a,b) => new Date(a.added) > new Date(b.added) ? a : b)
+    : LINKS[0];
+
   const emojis = { io:'🕹️', hub:'🗂️', classic:'👾', fun:'🎉', retro:'💾', edu:'📚', sim:'🌍' };
   $('featuredIcon').textContent = emojis[game.cat] || '🎮';
+  $('featuredName').textContent = game.name;
+  $('featuredHost').textContent = game.added
+    ? `Added ${new Date(game.added + 'T00:00').toLocaleDateString('en-IE',{day:'numeric',month:'long',year:'numeric'})}`
+    : hostOf(game.url);
+  $('featuredLink').href = game.url;
+
+  // Update the banner label text
+  const label = $('featuredBanner').querySelector('.featured-label');
+  if(label) label.textContent = '✨ Newest Addition';
 }
 
 /* ======================================================================
@@ -1419,6 +1444,9 @@ function render(){
   if(!total){ grid.innerHTML=''; empty.classList.add('show'); return; }
   empty.classList.remove('show');
 
+  // Disconnect any previously observed images before re-render
+  faviconObserver.disconnect();
+
   const frag = document.createDocumentFragment();
   list.forEach((l, i) => {
     const isFav = favourites.has(l.url);
@@ -1433,11 +1461,12 @@ function render(){
     // Track visit on click
     a.addEventListener('click', () => { trackVisit(l.url); renderRecent(); });
 
-    // Icon
+    // Icon — src set lazily by IntersectionObserver to avoid 130+ simultaneous requests
     const iconDiv = document.createElement('div'); iconDiv.className='tile-icon';
-    const img = document.createElement('img'); img.alt=''; img.loading='lazy';
-    img.src = favUrl(l.url);
+    const img = document.createElement('img'); img.alt=''; img.src=XP_FALLBACK;
+    img.dataset.favSrc = favUrl(l.url);
     img.onerror = () => { img.onerror=null; img.src=XP_FALLBACK; };
+    faviconObserver.observe(img);
     iconDiv.appendChild(img);
 
     // Body
