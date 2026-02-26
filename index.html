@@ -303,7 +303,8 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
   box-shadow: 0 8px 22px rgba(14,127,204,0.30);
   transition: transform var(--ease), box-shadow var(--ease);
 }
-.unlock-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(14,127,204,0.38); }
+.unlock-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(14,127,204,0.38); }
+.unlock-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .lock-err {
   display: none; align-items: center; gap: 8px;
@@ -597,7 +598,7 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
   pointer-events: none;
 }
 
-/* Report button (hidden, appears on right-click context trigger) */
+/* Report button */
 .tile-report {
   position: absolute; bottom: 8px; left: 8px;
   background: rgba(192,57,43,0.10); border: 1px solid rgba(192,57,43,0.15);
@@ -637,7 +638,7 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
 .empty-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-mid); }
 .empty-sub { font-size: 13px; }
 
-/* ── Spinner (random) overlay ── */
+/* ── Spinner overlay ── */
 .spinner-overlay {
   position: fixed; inset: 0; z-index: 8000;
   display: flex; align-items: center; justify-content: center;
@@ -765,7 +766,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
 
 <!-- ======================================================
      LOCK OVERLAY
-     Access code: defined in JS as LOCK_CODE below
 ====================================================== -->
 <div class="lock-overlay" id="lockOverlay" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
   <div class="lock-panel">
@@ -804,7 +804,7 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
         <path d="M12 8v5" stroke="#c0392b" stroke-width="1.8" stroke-linecap="round"/>
         <circle cx="12" cy="16.5" r="1" fill="#c0392b"/>
       </svg>
-      Incorrect code — try again.
+      <span id="errText">Incorrect code — try again.</span>
     </div>
     <div class="lock-footer">
       <span>Music plays after unlock — use mute button to stop.</span>
@@ -988,31 +988,16 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
 
 /* ======================================================================
    ██████╗  █████╗ ████████╗ █████╗
-   ██╔══██╗██╔══██╗╚══██╔══╝██╔══██╗
-   ██║  ██║███████║   ██║   ███████║
-   ██║  ██║██╔══██║   ██║   ██╔══██║
-   ██████╔╝██║  ██║   ██║   ██║  ██║
-   ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝
-
-   HOW TO ADD LINKS
+   DATA — HOW TO ADD LINKS
    ─────────────────────────────────────────────────────────────────────
-   Add a new entry inside the LINKS array below:
+   Add a new entry inside the LINKS array:
      { name:"Game Name", url:"https://example.com/", cat:"hub", added:"2025-01-01" },
-
-   Fields:
-     name   (required)  Display name
-     url    (required)  Full URL including https://
-     cat    (required)  Category key — see CAT_LABELS below
-     added  (optional)  ISO date string — shows a "New" badge for 14 days
 
    HOW TO ADD A CATEGORY
    ─────────────────────────────────────────────────────────────────────
    1. Choose a short key, e.g.  "action"
    2. Add it to CAT_LABELS:     action: 'Action',
    3. Use it on links:          cat:"action"
-   The filter button appears automatically — no other changes needed.
-
-   ⚠  Every entry needs a comma at the end (except the very last one).
    ====================================================================== */
 
 const LINKS = [
@@ -1160,15 +1145,13 @@ const LINKS = [
   { name:"BitLife",              url:"https://bitlifeonline.io/home",          cat:"sim" },
   { name:"Fallen London",        url:"https://www.fallenlondon.com/",          cat:"sim" },
   { name:"Granblue Fantasy",     url:"https://granbluefantasy.jp/sp/en/",      cat:"sim" },
-  
-  /*new*/
+
+  /* ── Proxy / Unblocker ──────────────────────────────────────────── */
   {name:"Startpage", url:"https://startpage.com", cat:"proxy", added:"2026-02-25"},
 ];
 
 /* ======================================================================
    CATEGORIES
-   Add new entries here — the filter button appears automatically.
-   Format:  key: 'Label shown in UI',
    ====================================================================== */
 const CAT_LABELS = {
   all:     'All',
@@ -1179,20 +1162,30 @@ const CAT_LABELS = {
   retro:   'Retro / OS',
   edu:     'Education',
   sim:     'Simulation',
-  /* ↓ Add new categories here ↓ */
-  proxy: 'Unblocker',
+  proxy:   'Unblocker',
 };
 
 /* ======================================================================
-   CONFIG — tweak behaviour without touching the rest of the code
+   CONFIG
+   ─────────────────────────────────────────────────────────────────────
+   LOCK_HASH: SHA-256 of the access code. The plain-text code is NOT
+   stored here. To change the code:
+     1. Run in your browser console:
+        crypto.subtle.digest('SHA-256', new TextEncoder().encode('YOURNEWCODE'))
+          .then(b => console.log(Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('')))
+     2. Paste the resulting hex string as LOCK_HASH below.
+
+   Rate limiting: MAX_ATTEMPTS wrong guesses trigger a LOCKOUT_MS cooldown.
    ====================================================================== */
 const CONFIG = {
-  LOCK_CODE:        '4589',      // access code (numeric string)
-  NEW_BADGE_DAYS:   14,          // days after `added` date to show "New" badge
-  RECENT_MAX:       8,           // max recently-visited items to show
-  AUDIO_SRC:        'Music.mp3', // path to music file (relative to index.html)
-  AUDIO_VOLUME:     0.55,        // 0.0–1.0
-  GITHUB_REPO:      'Red404441/Games-gallery-', // for "Report broken link" issues
+  LOCK_HASH:      '886b73d4b098e551f1dbb54ef2b55ef41981908b9b3c1b8fe7c442f26f0fa63d',
+  MAX_ATTEMPTS:    5,
+  LOCKOUT_MS:      30000,        // 30 seconds
+  NEW_BADGE_DAYS:  14,
+  RECENT_MAX:      8,
+  AUDIO_SRC:       'Music.mp3',
+  AUDIO_VOLUME:    0.55,
+  GITHUB_REPO:     'Red404441/Games-gallery-',
 };
 
 /* ======================================================================
@@ -1223,14 +1216,31 @@ function fuzzyScore(hay, needle){
 
 function isNew(added){
   if(!added) return false;
-  // Parse as local date (append T00:00 to avoid UTC offset shifting the date)
   const diff = (Date.now() - new Date(added + 'T00:00').getTime()) / 86400000;
   return diff >= 0 && diff <= CONFIG.NEW_BADGE_DAYS;
 }
 
-/* ── Favicon lazy loader via IntersectionObserver ──
-   Tiles start with the XP fallback; favicons load only when scrolled into view.
-   Caches already-loaded URLs to avoid repeat requests on re-render. */
+/* ── SHA-256 helper ── */
+async function sha256(str) {
+  const buf  = new TextEncoder().encode(str);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+/* ── Rate limiting helpers (session-scoped) ── */
+function getLockoutUntil(){ return parseInt(sessionStorage.getItem('gg_lock_until') || '0'); }
+function getAttempts()     { return parseInt(sessionStorage.getItem('gg_attempts')   || '0'); }
+function resetAttempts()   { sessionStorage.removeItem('gg_attempts'); sessionStorage.removeItem('gg_lock_until'); }
+function recordBadAttempt(){
+  const n = getAttempts() + 1;
+  sessionStorage.setItem('gg_attempts', n);
+  if(n >= CONFIG.MAX_ATTEMPTS) sessionStorage.setItem('gg_lock_until', Date.now() + CONFIG.LOCKOUT_MS);
+  return n;
+}
+
+/* ── Favicon lazy loader ── */
 const favCache = new Set();
 const faviconObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
@@ -1242,10 +1252,10 @@ const faviconObserver = new IntersectionObserver((entries) => {
     if(favCache.has(src)){ img.src = src; return; }
     const probe = new Image();
     probe.onload  = () => { favCache.add(src); img.src = src; };
-    probe.onerror = () => { /* keep XP fallback */ };
+    probe.onerror = () => {};
     probe.src = src;
   });
-}, { rootMargin: '200px' }); // start loading 200px before tile enters viewport
+}, { rootMargin: '200px' });
 
 /* ── Toast ── */
 let toastTimer;
@@ -1256,7 +1266,7 @@ function showToast(text, ms=2200){
   toastTimer = setTimeout(() => $('toast').classList.remove('show'), ms);
 }
 
-/* ── Persistent storage wrapper ── */
+/* ── Persistent storage ── */
 const Store = {
   get(k, fallback=null){ try{ const v=localStorage.getItem(k); return v!=null?JSON.parse(v):fallback; }catch{ return fallback; } },
   set(k, v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch{} },
@@ -1268,11 +1278,11 @@ const Store = {
 let currentQuery = '';
 let currentCat   = 'all';
 let currentSort  = 'default';
-let currentView  = Store.get('gg_view','grid');   // 'grid' | 'list'
+let currentView  = Store.get('gg_view','grid');
 let isCompact    = Store.get('gg_compact',false);
 let isDark       = Store.get('gg_dark',false);
 let favourites   = new Set(Store.get('gg_favs',[]));
-let recentLinks  = Store.get('gg_recent',[]);     // array of urls, most recent first
+let recentLinks  = Store.get('gg_recent',[]);
 
 /* ======================================================================
    THEMING
@@ -1319,11 +1329,8 @@ $('viewBtn').addEventListener('click', () => {
 
 /* ======================================================================
    DAILY FEATURED GAME
-   Rotates deterministically based on date — same game all day for everyone.
    ====================================================================== */
 function setupFeatured(){
-  // Show the most recently added link (highest `added` date).
-  // Falls back to the first link if none have an `added` field yet.
   const withDates = LINKS.filter(l => l.added);
   const game = withDates.length
     ? withDates.reduce((a,b) => new Date(a.added) > new Date(b.added) ? a : b)
@@ -1337,7 +1344,6 @@ function setupFeatured(){
     : hostOf(game.url);
   $('featuredLink').href = game.url;
 
-  // Update the banner label text
   const label = $('featuredBanner').querySelector('.featured-label');
   if(label) label.textContent = '✨ Newest Addition';
 }
@@ -1403,10 +1409,8 @@ function buildFilters(){
 function getFiltered(){
   let list = [...LINKS];
 
-  // Category
   if(currentCat !== 'all') list = list.filter(l => l.cat === currentCat);
 
-  // Search
   if(currentQuery.trim()){
     const q = currentQuery.trim();
     list = list
@@ -1417,7 +1421,6 @@ function getFiltered(){
     return list;
   }
 
-  // Sort
   if(currentSort === 'az') list.sort((a,b) => a.name.localeCompare(b.name));
   else if(currentSort === 'za') list.sort((a,b) => b.name.localeCompare(a.name));
   else if(currentSort === 'favs'){
@@ -1451,7 +1454,6 @@ function render(){
   if(!total){ grid.innerHTML=''; empty.classList.add('show'); return; }
   empty.classList.remove('show');
 
-  // Disconnect any previously observed images before re-render
   faviconObserver.disconnect();
 
   const frag = document.createDocumentFragment();
@@ -1465,10 +1467,8 @@ function render(){
     a.setAttribute('aria-label', l.name);
     a.style.animationDelay = `${Math.min(i*16,280)}ms`;
 
-    // Track visit on click
     a.addEventListener('click', () => { trackVisit(l.url); renderRecent(); });
 
-    // Icon — src set lazily by IntersectionObserver to avoid 130+ simultaneous requests
     const iconDiv = document.createElement('div'); iconDiv.className='tile-icon';
     const img = document.createElement('img'); img.alt=''; img.src=XP_FALLBACK;
     img.dataset.favSrc = favUrl(l.url);
@@ -1476,13 +1476,11 @@ function render(){
     faviconObserver.observe(img);
     iconDiv.appendChild(img);
 
-    // Body
     const body = document.createElement('div'); body.className='tile-body';
     const nameEl = document.createElement('div'); nameEl.className='tile-name'; nameEl.textContent=l.name;
     const hostEl = document.createElement('div'); hostEl.className='tile-host'; hostEl.textContent=hostOf(l.url);
     body.appendChild(nameEl); body.appendChild(hostEl);
 
-    // Favourite button
     const favBtn = document.createElement('button');
     favBtn.className = 'tile-fav' + (isFav?' active':'');
     favBtn.title = isFav ? 'Remove from favourites' : 'Add to favourites';
@@ -1496,7 +1494,6 @@ function render(){
       render();
     });
 
-    // Report button
     const reportBtn = document.createElement('button');
     reportBtn.className = 'tile-report';
     reportBtn.title = 'Report broken link';
@@ -1509,7 +1506,6 @@ function render(){
       window.open(`https://github.com/${CONFIG.GITHUB_REPO}/issues/new?title=${title}&body=${body}`, '_blank', 'noopener');
     });
 
-    // "New" badge
     if(isNew(l.added)){
       const badge = document.createElement('div');
       badge.className='tile-badge-new'; badge.textContent='NEW';
@@ -1538,10 +1534,8 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// Sort
 $('sortSelect').addEventListener('change', e => { currentSort=e.target.value; render(); });
 
-// Keyboard grid navigation
 grid.addEventListener('keydown', e => {
   const items = [...grid.querySelectorAll('.tile')];
   const idx   = items.indexOf(document.activeElement);
@@ -1609,11 +1603,44 @@ audioBtn.addEventListener('click', () => {
 function tryAutoplay(){ createAudio(); if(audio) audio.play().catch(()=>{}); }
 
 /* ======================================================================
-   LOCK
+   LOCK — SHA-256 hashed password + rate limiting
+   ─────────────────────────────────────────────────────────────────────
+   The plain-text access code is NEVER stored in this file.
+   Only a SHA-256 hash is compared against, so even if someone reads
+   the source code they only see a hash, not the actual code.
+
+   Rate limiting: after MAX_ATTEMPTS wrong guesses the input locks for
+   LOCKOUT_MS milliseconds (tracked in sessionStorage, resets on tab close).
    ====================================================================== */
-const overlay  = $('lockOverlay');
-const passInput= $('passInput');
-const errMsg   = $('errMsg');
+const overlay   = $('lockOverlay');
+const passInput = $('passInput');
+const errMsg    = $('errMsg');
+const errText   = $('errText');
+
+let lockCountdown = null;
+
+function startLockoutCountdown(){
+  const btn = $('passBtn');
+  if(lockCountdown) clearInterval(lockCountdown);
+  lockCountdown = setInterval(() => {
+    const remaining = Math.ceil((getLockoutUntil() - Date.now()) / 1000);
+    if(remaining <= 0){
+      clearInterval(lockCountdown); lockCountdown = null;
+      resetAttempts();
+      btn.disabled = false;
+      btn.textContent = 'UNLOCK';
+      errText.textContent = 'You can try again now.';
+      passInput.disabled = false;
+      passInput.focus();
+    } else {
+      btn.disabled = true;
+      btn.textContent = `Wait ${remaining}s`;
+      passInput.disabled = true;
+      errMsg.classList.add('show');
+      errText.textContent = `Too many attempts — wait ${remaining}s.`;
+    }
+  }, 250);
+}
 
 function unlock(remember=true){
   overlay.classList.add('hiding');
@@ -1627,22 +1654,48 @@ function unlock(remember=true){
   showToast('Welcome to the Gallery ✦', 2500);
 }
 
-function tryUnlock(){
-  if((passInput.value||'').trim() === CONFIG.LOCK_CODE){
+async function tryUnlock(){
+  // Check if still locked out
+  const lockUntil = getLockoutUntil();
+  if(lockUntil && Date.now() < lockUntil){ startLockoutCountdown(); return; }
+
+  const val = (passInput.value || '').trim();
+  passInput.value = ''; // clear immediately — value never sits in DOM
+
+  if(!val) return;
+
+  const hash = await sha256(val);
+
+  if(hash === CONFIG.LOCK_HASH){
+    resetAttempts();
     unlock(true);
   } else {
-    errMsg.classList.add('show');
+    const attempts = recordBadAttempt();
+    const newLock  = getLockoutUntil();
     SFX.error();
-    overlay.animate([{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'none'}],{duration:260});
-    passInput.focus(); passInput.select();
+    overlay.animate(
+      [{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'none'}],
+      {duration:260}
+    );
+    if(newLock && Date.now() < newLock){
+      startLockoutCountdown();
+    } else {
+      const left = CONFIG.MAX_ATTEMPTS - attempts;
+      errMsg.classList.add('show');
+      errText.textContent = left > 0
+        ? `Incorrect code — ${left} attempt${left===1?'':'s'} remaining.`
+        : 'Too many attempts.';
+      passInput.focus();
+    }
   }
 }
 
 $('passBtn').addEventListener('click', tryUnlock);
 passInput.addEventListener('keydown', e => {
-  if(e.key==='Enter'){ e.preventDefault(); tryUnlock(); }
-  if(e.key==='Escape'){ passInput.value=''; errMsg.classList.remove('show'); }
+  if(e.key === 'Enter'){ e.preventDefault(); tryUnlock(); }
+  if(e.key === 'Escape'){ passInput.value = ''; errMsg.classList.remove('show'); }
 });
+
 document.addEventListener('focusin', e => {
   if(document.body.classList.contains('locked') && !overlay.contains(e.target)){
     e.stopPropagation(); passInput.focus();
@@ -1651,10 +1704,8 @@ document.addEventListener('focusin', e => {
 
 /* ======================================================================
    SEASONAL THEMES
-   Detects current month and applies theme + particles automatically.
    ====================================================================== */
 const SEASONS = {
-  //         month (0-based): [season, emoji, label, particles]
   spring: { months:[2,3,4],  emoji:'🌸', label:'Spring', particles:'blossoms', chars:['🌸','🌺','🌼','🪷'] },
   summer: { months:[5,6,7],  emoji:'☀️', label:'Summer', particles:null,       chars:[] },
   autumn: { months:[8,9,10], emoji:'🍂', label:'Autumn', particles:'leaves',   chars:['🍂','🍁','🌿','🍃'] },
@@ -1670,17 +1721,15 @@ function setupSeason(){
   const [name, data] = getSeason();
   document.documentElement.setAttribute('data-season', name);
 
-  // Update pill
   const pill = $('seasonPill');
   pill.textContent = `${data.emoji} ${data.label}`;
 
-  // Populate particles
   if(data.particles && data.chars.length){
     const container = $(data.particles);
     const count = name === 'winter' ? 22 : 14;
     for(let i = 0; i < count; i++){
       const el = document.createElement('div');
-      el.className = data.particles.slice(0,-1); // 'snowflake','leaf','blossom'
+      el.className = data.particles.slice(0,-1);
       el.textContent = data.chars[Math.floor(Math.random()*data.chars.length)];
       el.style.left     = `${Math.random()*100}%`;
       el.style.fontSize = `${0.7 + Math.random()*0.8}em`;
@@ -1690,14 +1739,11 @@ function setupSeason(){
     }
   }
 
-  // Summer: no extra particles, just default Aero sky
   if(name === 'summer') $('seasonPill').style.display = 'none';
 }
 
 /* ======================================================================
    SOUND EFFECTS
-   Subtle Web Audio API tones — no external files needed.
-   Respects prefers-reduced-motion (mutes sounds if motion is reduced).
    ====================================================================== */
 const SFX = (() => {
   let ctx = null;
@@ -1721,7 +1767,7 @@ const SFX = (() => {
       if(fadeOut) g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
       o.start(c.currentTime);
       o.stop(c.currentTime + duration);
-    } catch(e){ /* silently ignore — user hasn't interacted yet */ }
+    } catch(e){}
   }
 
   return {
@@ -1734,10 +1780,7 @@ const SFX = (() => {
   };
 })();
 
-// Wire hover SFX to tiles (delegated)
-document.addEventListener('mouseover', e => {
-  if(e.target.closest('.tile')) SFX.hover();
-});
+document.addEventListener('mouseover', e => { if(e.target.closest('.tile')) SFX.hover(); });
 document.addEventListener('mousedown', e => {
   if(e.target.closest('.tile') || e.target.closest('button') || e.target.closest('a')) SFX.click();
 });
@@ -1748,7 +1791,6 @@ document.addEventListener('mousedown', e => {
 (function initCursor(){
   const dot  = $('cursorDot');
   const ring = $('cursorRing');
-  // Ring lags slightly behind for the Aero bubble feel
   let rx=0,ry=0, tx=0,ty=0;
 
   document.addEventListener('mousemove', e => {
@@ -1756,7 +1798,6 @@ document.addEventListener('mousedown', e => {
     dot.style.left = tx+'px'; dot.style.top = ty+'px';
   });
 
-  // Smooth ring follow
   (function loop(){
     rx += (tx-rx)*0.14;
     ry += (ty-ry)*0.14;
@@ -1764,25 +1805,22 @@ document.addEventListener('mousedown', e => {
     requestAnimationFrame(loop);
   })();
 
-  // Hover state
   document.addEventListener('mouseover', e => {
     const hoverable = e.target.closest('a,button,.tile,.filter-btn,.icon-btn,.contribute-btn,.unlock-btn,.recent-chip');
     document.body.classList.toggle('cursor-hover', !!hoverable);
   });
 
-  // Click state
   document.addEventListener('mousedown', () => {
     document.body.classList.add('cursor-click');
     setTimeout(()=>document.body.classList.remove('cursor-click'), 200);
   });
 
-  // Hide when leaving window
   document.addEventListener('mouseleave', () => { dot.style.opacity='0'; ring.style.opacity='0'; });
   document.addEventListener('mouseenter', () => { dot.style.opacity='1'; ring.style.opacity='1'; });
 })();
 
 /* ======================================================================
-   KONAMI CODE EASTER EGG  ↑↑↓↓←→←→BA
+   KONAMI CODE EASTER EGG
    ====================================================================== */
 const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
 let konamiIdx = 0;
@@ -1805,25 +1843,23 @@ function konamiEgg(){
    INIT
    ====================================================================== */
 window.addEventListener('DOMContentLoaded', () => {
-  // Apply saved preferences
   applyTheme();
   applyCompact();
   applyView();
-
-  // Seasonal theme + particles
   setupSeason();
-
-  // Build UI
   buildFilters();
   setupFeatured();
   renderRecent();
   render();
 
-  // Check session unlock
+  // Check if already unlocked this session
   try{
     if(sessionStorage.getItem('gg_unlocked')==='1'){
       unlock(false); tryAutoplay();
     } else {
+      // Check for leftover lockout on page load
+      const lockUntil = getLockoutUntil();
+      if(lockUntil && Date.now() < lockUntil) startLockoutCountdown();
       passInput.focus();
     }
   } catch(_){ passInput.focus(); }
