@@ -1606,8 +1606,6 @@ function tryAutoplay(){ createAudio(); if(audio) audio.play().catch(()=>{}); }
    LOCK — SHA-256 hashed password + rate limiting
    ─────────────────────────────────────────────────────────────────────
    The plain-text access code is NEVER stored in this file.
-   Only a SHA-256 hash is compared against, so even if someone reads
-   the source code they only see a hash, not the actual code.
 
    Rate limiting: after MAX_ATTEMPTS wrong guesses the input locks for
    LOCKOUT_MS milliseconds (tracked in sessionStorage, resets on tab close).
