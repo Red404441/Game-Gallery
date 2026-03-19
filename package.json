@@ -1,0 +1,24 @@
+{
+  "name": "game-gallery",
+  "version": "1.0.0",
+  "description": "A curated gallery of browser games — Frutiger Aero Edition",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve .",
+    "test": "echo \"No tests specified\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Red404441/Game-Gallery.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Red404441/Game-Gallery/issues"
+  },
+  "homepage": "https://github.com/Red404441/Game-Gallery#readme",
+  "dependencies": {
+    "@vercel/speed-insights": "^2.0.0"
+  }
+}
