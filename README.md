@@ -3,8 +3,8 @@ I made this site for fun in school using a collection of game links i made.
 Made with help from chatGPT and Claude.ai
 
 Song used is:
-"Palm Mall" by [Artist Name]  
-Source: [link to original page]  
+"Palm Mall" by [猫 シ Corp.]  
+Source: [https://catsystemcorp.bandcamp.com/album/palm-mall]  
 Licensed under CC BY 4.0  
 https://creativecommons.org/licenses/by/4.0/
 
