@@ -16,5 +16,4 @@ enjoy the site!
 
 Note: i made this for my school to work as a games hub, if the link to this site gets found it is nearly a guarentee to get all sites here banned. I might changed the link frequently
 
-if you have any game recomendations or sites you want added, feel free to get in contact. my discord is in my bio. just specify why you are messaging so i know your not some troll or something 
-why a code: because if this gets found, half of the contents will for sure be banned, gonna remove it soon, just when i get around to it
+if you have any game recomendations or sites you want added, feel free to get in contact. 
