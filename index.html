@@ -5,11 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>CJ Falons Ebook Readery</title>
 
-<!-- =====================================================================
-  PWA MANIFEST (inline for single-file deployment)
-  To use: save this file as index.html in your repo root.
-  Add a 192x192 and 512x512 icon.png to your repo for full PWA support.
-====================================================================== -->
+<!-- PWA MANIFEST -->
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png"/>
@@ -28,55 +24,35 @@
 
 <style>
 /* ======================================================================
-   DESIGN TOKENS — edit these to retheme the entire site
+   DESIGN TOKENS
    ====================================================================== */
 :root {
-  /* Sky palette */
   --sky-top: #6ec6f5;
   --sky-mid: #b8e0f7;
   --sky-low: #dff2fd;
-
-  /* Glass */
   --glass-bg:     rgba(255,255,255,0.62);
   --glass-border: rgba(255,255,255,0.78);
   --glass-shadow: rgba(0,60,120,0.10);
-
-  /* Accent */
   --accent:      #0e7fcc;
   --accent-2:    #46c4e3;
   --accent-glow: rgba(14,127,204,0.22);
-
-  /* Text */
   --text:      #042a3c;
   --text-mid:  #185470;
   --text-soft: #3a7a99;
-
-  /* Semantic */
   --danger:  #c0392b;
   --success: #0a9e6e;
   --warning: #d4870a;
-
-  /* Favourites star */
   --star-active: #f5a623;
-
-  /* Shape */
   --radius-lg: 18px;
   --radius-md: 12px;
   --radius-sm:  8px;
-
-  /* Typography */
   --font-display: 'Unbounded', sans-serif;
   --font-body:    'DM Sans', sans-serif;
-
-  /* Motion */
   --ease: .28s cubic-bezier(.2,.9,.3,1);
-
-  /* Layout */
-  --grid-min: 200px;   /* min tile width — increase for larger tiles */
+  --grid-min: 200px;
   --grid-gap:  12px;
 }
 
-/* ── Dark theme overrides ── */
 [data-theme="dark"] {
   --sky-top: #0a1628;
   --sky-mid: #0d1f38;
@@ -92,7 +68,6 @@
   --accent-glow: rgba(56,174,232,0.22);
 }
 
-/* ── Compact view ── */
 [data-compact="true"] { --grid-min: 150px; --grid-gap: 8px; }
 
 *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -121,7 +96,6 @@ body {
   background-attachment: fixed;
 }
 
-/* Decorative blobs */
 body::before, body::after {
   content: ''; position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
 }
@@ -138,12 +112,9 @@ body::after {
 
 /* ======================================================================
    SEASONAL THEMES
-   Applied automatically by JS based on current month.
-   To manually override: set data-season="spring|summer|autumn|winter" on <html>
    ====================================================================== */
 [data-season="spring"] { --sky-top:#a8e6cf; --sky-mid:#c8f5e0; --sky-low:#e8fff5; }
 [data-season="spring"][data-theme="dark"] { --sky-top:#0a1f14; --sky-mid:#0d2a1a; --sky-low:#0f3020; }
-/* summer = default Aero blue, no override needed */
 [data-season="autumn"] {
   --sky-top:#e8a87c; --sky-mid:#f2c99a; --sky-low:#fdecd8;
   --accent:#c0622a; --accent-2:#e8903a; --accent-glow:rgba(192,98,42,0.22);
@@ -155,20 +126,17 @@ body::after {
 }
 [data-season="winter"][data-theme="dark"] { --sky-top:#080e1a; --sky-mid:#0c1428; --sky-low:#101a30; }
 
-/* Snowflakes */
 .snowflakes { position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;display:none; }
 [data-season="winter"] .snowflakes { display:block; }
 .snowflake { position:absolute;top:-20px;color:rgba(255,255,255,0.78);font-size:1em;animation:snowfall linear infinite;user-select:none;pointer-events:none; }
 [data-theme="dark"] .snowflake { color:rgba(160,200,240,0.38); }
 @keyframes snowfall { 0%{transform:translateY(-20px) rotate(0deg);opacity:1;} 100%{transform:translateY(110vh) rotate(360deg);opacity:0.1;} }
 
-/* Autumn leaves */
 .leaves { position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;display:none; }
 [data-season="autumn"] .leaves { display:block; }
 .leaf { position:absolute;top:-30px;animation:leaffall linear infinite;user-select:none;pointer-events:none;font-size:1.2em; }
 @keyframes leaffall { 0%{transform:translateY(-30px) rotate(0deg) translateX(0);opacity:1;} 50%{transform:translateY(50vh) rotate(180deg) translateX(40px);} 100%{transform:translateY(110vh) rotate(360deg) translateX(-20px);opacity:0.1;} }
 
-/* Spring blossoms */
 .blossoms { position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;display:none; }
 [data-season="spring"] .blossoms { display:block; }
 .blossom { position:absolute;top:-20px;animation:blossomfall linear infinite;user-select:none;pointer-events:none;font-size:0.9em; }
@@ -176,7 +144,6 @@ body::after {
 
 @media (prefers-reduced-motion:reduce) { .snowflake,.leaf,.blossom { animation:none;display:none; } }
 
-/* Seasonal indicator pill in header tagline */
 .season-pill {
   display:inline-flex;align-items:center;gap:5px;
   background:rgba(255,255,255,0.5);border:1px solid var(--glass-border);
@@ -186,10 +153,55 @@ body::after {
 [data-theme="dark"] .season-pill { background:rgba(20,40,80,0.5); }
 
 /* ======================================================================
+   TAP-TO-PLAY GATE
+   ====================================================================== */
+.gate-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(4,12,24,0.6);
+  backdrop-filter: blur(16px) saturate(130%);
+  -webkit-backdrop-filter: blur(16px) saturate(130%);
+  transition: opacity .4s;
+}
+.gate-overlay.hidden { opacity: 0; pointer-events: none; }
+
+.gate-panel {
+  width: min(460px,93vw);
+  background: linear-gradient(155deg, rgba(255,255,255,0.96), rgba(225,246,255,0.94));
+  border-radius: var(--radius-lg); padding: 40px 32px;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 40px 80px rgba(0,20,60,0.32), inset 0 1px 0 rgba(255,255,255,0.6);
+  display: flex; flex-direction: column; gap: 20px;
+  animation: panelIn .5s cubic-bezier(.2,.9,.3,1) both;
+  text-align: center;
+}
+@keyframes panelIn { from{opacity:0;transform:translateY(20px) scale(.97);} to{opacity:1;transform:none;} }
+
+.gate-logo {
+  width: 56px; height: 56px; border-radius: 14px; margin: 0 auto;
+  background: linear-gradient(145deg,#d4f0ff,#aadaf5);
+  box-shadow: 0 4px 16px rgba(0,80,160,0.12), inset 0 1px 0 rgba(255,255,255,0.7);
+  display: flex; align-items: center; justify-content: center;
+}
+.gate-logo svg { width: 28px; height: 28px; }
+
+.gate-heading { font-family: var(--font-display); font-size: 21px; font-weight: 900; color: #042a3c; }
+.gate-sub { font-size: 14px; color: #3a7a99; line-height: 1.5; }
+
+.gate-btn {
+  padding: 14px 24px; border-radius: var(--radius-md); border: 0; cursor: pointer;
+  background: linear-gradient(145deg,#0e7fcc,#0a6ab5); color: white;
+  font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+  box-shadow: 0 8px 22px rgba(14,127,204,0.30);
+  transition: transform var(--ease), box-shadow var(--ease);
+}
+.gate-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(14,127,204,0.38); }
+.gate-btn:active { transform: scale(.97); }
+
+/* ======================================================================
    CUSTOM CURSOR
    ====================================================================== */
 body,input,select,button,a,[role="button"] { cursor:none; }
-/* Fallback for touch devices */
 @media (hover:none) {
   body,input,select,button,a,[role="button"] { cursor:auto; }
   .cursor-dot,.cursor-ring { display:none !important; }
@@ -246,82 +258,7 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
 }
 @media (prefers-reduced-motion: reduce) { .cloud { animation: none; } }
 
-/* ── Lock overlay ── */
-.lock-overlay {
-  position: fixed; inset: 0; z-index: 9999;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(4,12,24,0.6);
-  backdrop-filter: blur(16px) saturate(130%);
-  -webkit-backdrop-filter: blur(16px) saturate(130%);
-  transition: opacity .4s;
-}
-.lock-overlay.hiding { opacity: 0; pointer-events: none; }
-
-.lock-panel {
-  width: min(460px,93vw);
-  background: linear-gradient(155deg, rgba(255,255,255,0.96), rgba(225,246,255,0.94));
-  border-radius: var(--radius-lg); padding: 32px 28px 26px;
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 40px 80px rgba(0,20,60,0.32), inset 0 1px 0 rgba(255,255,255,0.6);
-  display: flex; flex-direction: column; gap: 16px;
-  animation: panelIn .5s cubic-bezier(.2,.9,.3,1) both;
-}
-@keyframes panelIn { from{opacity:0;transform:translateY(20px) scale(.97);} to{opacity:1;transform:none;} }
-
-.lock-logo-row { display: flex; align-items: center; gap: 14px; }
-.lock-logo {
-  width: 50px; height: 50px; border-radius: 13px; flex-shrink: 0;
-  background: linear-gradient(145deg,#d4f0ff,#aadaf5);
-  box-shadow: 0 4px 16px rgba(0,80,160,0.12), inset 0 1px 0 rgba(255,255,255,0.7);
-  display: flex; align-items: center; justify-content: center;
-}
-.lock-logo svg { width: 26px; height: 26px; }
-.lock-heading { font-family: var(--font-display); font-size: 19px; font-weight: 900; color: #042a3c; }
-.lock-sub { font-size: 13px; color: #3a7a99; margin-top: 3px; }
-
-.lock-hint {
-  display: flex; align-items: center; gap: 7px;
-  background: rgba(14,127,204,0.07); border: 1px solid rgba(14,127,204,0.12);
-  border-radius: 100px; padding: 6px 12px; font-size: 12px; color: #185470; width: fit-content;
-}
-
-.pass-row { display: flex; gap: 10px; }
-.pass-input {
-  flex: 1; padding: 12px 14px; border-radius: var(--radius-md);
-  border: 1.5px solid rgba(0,0,0,0.07); font-size: 16px; outline: none;
-  background: rgba(255,255,255,0.9); color: #042a3c;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.04), inset 0 1px 0 white;
-  transition: border-color .2s, box-shadow .2s;
-  letter-spacing: 4px; font-family: var(--font-body);
-}
-.pass-input::placeholder { letter-spacing: 0; color: #a0b8c8; }
-.pass-input:focus {
-  border-color: rgba(14,127,204,0.4);
-  box-shadow: 0 0 0 4px rgba(14,127,204,0.15), 0 3px 10px rgba(0,0,0,0.04);
-}
-.unlock-btn {
-  padding: 12px 18px; border-radius: var(--radius-md); border: 0; cursor: pointer;
-  background: linear-gradient(145deg,#0e7fcc,#0a6ab5); color: white;
-  font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
-  box-shadow: 0 8px 22px rgba(14,127,204,0.30);
-  transition: transform var(--ease), box-shadow var(--ease);
-}
-.unlock-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(14,127,204,0.38); }
-.unlock-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.lock-err {
-  display: none; align-items: center; gap: 8px;
-  color: var(--danger); background: rgba(192,57,43,0.06);
-  padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid rgba(192,57,43,0.12);
-  font-size: 13px;
-}
-.lock-err.show { display: flex; }
-.lock-footer { font-size: 11px; color: #7aaccb; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-
 /* ── App shell ── */
-body.locked { overflow: hidden; }
-body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; opacity: 0.35; }
-
 .app {
   position: relative; z-index: 1;
   max-width: 1280px; margin: 0 auto;
@@ -356,7 +293,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
 
 .header-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 
-/* Icon button (round glass pill) */
 .icon-btn {
   width: 40px; height: 40px; border-radius: 50%;
   border: 1px solid var(--glass-border);
@@ -376,7 +312,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
   background: linear-gradient(145deg,rgba(14,127,204,0.18),rgba(70,196,227,0.12));
 }
 
-/* Tooltip on icon buttons */
 .icon-btn::after {
   content: attr(data-tip);
   position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
@@ -397,7 +332,7 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
 }
 .contribute-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(14,127,204,0.34); }
 
-/* ── Daily featured banner ── */
+/* ── Featured banner ── */
 .featured-banner {
   background: linear-gradient(135deg,rgba(14,127,204,0.12),rgba(70,196,227,0.10));
   border: 1px solid rgba(14,127,204,0.18);
@@ -461,7 +396,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
   border-radius: 5px; padding: 2px 6px; font-size: 11px; color: var(--text-soft);
 }
 
-/* Sort select */
 .sort-select {
   padding: 9px 12px; border-radius: var(--radius-md);
   border: 1px solid var(--glass-border); background: var(--glass-bg);
@@ -471,7 +405,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
   box-shadow: 0 4px 14px var(--glass-shadow);
 }
 
-/* ── Filter pills ── */
 .filters { display: flex; gap: 7px; flex-wrap: wrap; }
 .filter-btn {
   padding: 7px 13px; border-radius: 100px;
@@ -489,14 +422,12 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
   border-color: transparent; box-shadow: 0 4px 14px rgba(14,127,204,0.28);
 }
 
-/* ── Stats bar ── */
 .stats-bar {
   display: flex; align-items: center; justify-content: space-between;
   font-size: 12px; color: var(--text-soft); gap: 10px; flex-wrap: wrap;
 }
 .results-count { font-weight: 600; color: var(--text-mid); }
 
-/* ── Grid shell ── */
 .grid-shell {
   background: rgba(255,255,255,0.36); border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg); padding: 14px;
@@ -507,7 +438,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
 }
 [data-theme="dark"] .grid-shell { background: rgba(8,20,44,0.5); }
 
-/* ── List view ── */
 .link-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--grid-min),1fr));
@@ -524,7 +454,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
 [data-view="list"] .tile-host { display: none; }
 [data-view="list"] .tile-fav { top: 50%; transform: translateY(-50%); right: 12px; }
 
-/* ── Tile ── */
 .tile {
   position: relative; display: flex; align-items: center; gap: 11px;
   padding: 13px 13px; border-radius: var(--radius-md); text-decoration: none;
@@ -576,7 +505,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
 .tile-name { font-weight: 600; font-size: 13.5px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tile-host { font-size: 11.5px; color: var(--text-soft); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* Favourite star */
 .tile-fav {
   position: absolute; top: 8px; right: 8px;
   width: 24px; height: 24px; border-radius: 50%; border: 0;
@@ -592,7 +520,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
 .tile-fav.active svg path { fill: var(--star-active); stroke: var(--star-active); }
 .tile-fav:hover { transform: scale(1.2); }
 
-/* "New" badge */
 .tile-badge-new {
   position: absolute; bottom: 8px; right: 8px;
   background: linear-gradient(135deg,#38c85a,#0a9e6e);
@@ -601,7 +528,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
   pointer-events: none;
 }
 
-/* Report button */
 .tile-report {
   position: absolute; bottom: 8px; left: 8px;
   background: rgba(192,57,43,0.10); border: 1px solid rgba(192,57,43,0.15);
@@ -612,7 +538,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
 }
 .tile:hover .tile-report { opacity: 1; }
 
-/* ── Recently visited strip ── */
 .recent-section { display: flex; flex-direction: column; gap: 8px; }
 .recent-label {
   font-size: 11px; font-weight: 600; color: var(--text-soft);
@@ -631,7 +556,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
 .recent-chip:hover { transform: translateY(-2px); box-shadow: 0 8px 18px var(--glass-shadow); }
 .recent-chip img { width: 16px; height: 16px; border-radius: 4px; object-fit: contain; }
 
-/* ── Empty state ── */
 .empty {
   display: none; flex-direction: column; align-items: center; justify-content: center;
   padding: 56px 20px; text-align: center; gap: 10px; color: var(--text-soft);
@@ -641,7 +565,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
 .empty-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-mid); }
 .empty-sub { font-size: 13px; }
 
-/* ── Spinner overlay ── */
 .spinner-overlay {
   position: fixed; inset: 0; z-index: 8000;
   display: flex; align-items: center; justify-content: center;
@@ -689,7 +612,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
   font-size: 16px; color: var(--text-soft);
 }
 
-/* ── Footer ── */
 .footer {
   display: flex; align-items: center; justify-content: space-between;
   font-size: 12px; color: var(--text-soft); flex-wrap: wrap; gap: 8px;
@@ -704,7 +626,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
 }
 [data-theme="dark"] .note-pill { background: rgba(14,34,68,0.6); border-color: rgba(255,255,255,0.08); }
 
-/* ── Toast ── */
 .toast {
   position: fixed; bottom: 20px; right: 20px; z-index: 99999;
   background: rgba(255,255,255,0.92); border: 1px solid var(--glass-border);
@@ -720,7 +641,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
 .toast.show { opacity: 1; transform: none; }
 .toast-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
 
-/* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
@@ -729,10 +649,8 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
 }
 ::-webkit-scrollbar-thumb:hover { background: rgba(14,127,204,0.30); }
 
-/* ── Focus ── */
 *:focus-visible { outline: 3px solid var(--accent-glow); outline-offset: 3px; }
 
-/* ── Responsive ── */
 @media (max-width:680px) {
   .link-grid { grid-template-columns: repeat(auto-fill,minmax(150px,1fr)); }
   .header-text h1 { font-size: 13px; }
@@ -748,13 +666,13 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
 </style>
 </head>
 
-<body class="locked">
+<body>
 
-<!-- ── Custom cursor ── -->
+<!-- Custom cursor -->
 <div class="cursor-dot"  id="cursorDot"  aria-hidden="true"></div>
 <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
 
-<!-- ── Clouds ── -->
+<!-- Clouds -->
 <div class="clouds" aria-hidden="true">
   <div class="cloud"></div>
   <div class="cloud"></div>
@@ -762,63 +680,34 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
   <div class="cloud"></div>
 </div>
 
-<!-- ── Seasonal particles (populated by JS) ── -->
+<!-- Seasonal particles -->
 <div class="snowflakes" id="snowflakes" aria-hidden="true"></div>
 <div class="leaves"     id="leaves"     aria-hidden="true"></div>
 <div class="blossoms"   id="blossoms"   aria-hidden="true"></div>
 
 <!-- ======================================================
-     LOCK OVERLAY
+     TAP-TO-PLAY GATE
 ====================================================== -->
-<div class="lock-overlay" id="lockOverlay" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
-  <div class="lock-panel">
-    <div class="lock-logo-row">
-      <div class="lock-logo" aria-hidden="true">
-        <svg viewBox="0 0 28 28" fill="none">
-          <rect x="3" y="8" width="22" height="14" rx="4" stroke="#0e7fcc" stroke-width="1.8"/>
-          <path d="M9 15h4m-2-2v4" stroke="#0e7fcc" stroke-width="1.8" stroke-linecap="round"/>
-          <circle cx="20" cy="15" r="1.2" fill="#0e7fcc"/>
-          <circle cx="17" cy="15" r="1.2" fill="#46c4e3"/>
-          <path d="M10 8V6a4 4 0 0 1 8 0v2" stroke="#0e7fcc" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <div>
-        <div class="lock-heading" id="lockTitle">Enter access code</div>
-        <div class="lock-sub">This gallery is access-protected.</div>
-      </div>
-    </div>
-    <div class="lock-hint" aria-hidden="true">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-        <path d="M12 2a5 5 0 0 1 5 5v2H7V7a5 5 0 0 1 5-5z" stroke="#185470" stroke-width="1.8" stroke-linejoin="round"/>
-        <rect x="3" y="9" width="18" height="13" rx="3" stroke="#185470" stroke-width="1.8"/>
-        <circle cx="12" cy="15.5" r="1.5" fill="#185470"/>
+<div class="gate-overlay" id="gateOverlay" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+  <div class="gate-panel">
+    <div class="gate-logo" aria-hidden="true">
+      <svg viewBox="0 0 28 28" fill="none">
+        <rect x="3" y="8" width="22" height="14" rx="4" stroke="#0e7fcc" stroke-width="1.8"/>
+        <path d="M9 15h4m-2-2v4" stroke="#0e7fcc" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="20" cy="15" r="1.2" fill="#0e7fcc"/>
+        <circle cx="17" cy="15" r="1.2" fill="#46c4e3"/>
+        <path d="M10 8V6a4 4 0 0 1 8 0v2" stroke="#0e7fcc" stroke-width="1.8" stroke-linecap="round"/>
       </svg>
-      Numeric only — press Enter to confirm
     </div>
-    <div class="pass-row">
-      <input class="pass-input" id="passInput" type="password" inputmode="numeric"
-             pattern="[0-9]*" maxlength="10" autocomplete="one-time-code"
-             aria-label="Access code" placeholder="••••"/>
-      <button class="unlock-btn" id="passBtn">UNLOCK</button>
+    <div>
+      <div class="gate-heading" id="gateTitle">Welcome to the Gallery</div>
+      <div class="gate-sub">Tap below to enter & enable music.</div>
     </div>
-    <div class="lock-err" id="errMsg" role="alert" aria-live="polite">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="10" stroke="#c0392b" stroke-width="1.8"/>
-        <path d="M12 8v5" stroke="#c0392b" stroke-width="1.8" stroke-linecap="round"/>
-        <circle cx="12" cy="16.5" r="1" fill="#c0392b"/>
-      </svg>
-      <span id="errText">Incorrect code — try again.</span>
-    </div>
-    <div class="lock-footer">
-      <span>Music plays after unlock — use mute button to stop.</span>
-      <span>Session remembered per tab.</span>
-    </div>
+    <button class="gate-btn" id="gateBtn">Enter ↗</button>
   </div>
 </div>
 
-<!-- ======================================================
-     RANDOM GAME SPINNER
-====================================================== -->
+<!-- Random game spinner -->
 <div class="spinner-overlay" id="spinnerOverlay" role="dialog" aria-modal="true" aria-label="Random game">
   <div class="spinner-card" style="position:relative;">
     <button class="spinner-close" id="spinnerClose" aria-label="Close">×</button>
@@ -833,12 +722,9 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
   </div>
 </div>
 
-<!-- ======================================================
-     MAIN APP
-====================================================== -->
+<!-- Main app -->
 <div class="app" id="app" data-view="grid">
 
-  <!-- Header -->
   <header class="header">
     <div class="header-logo" aria-hidden="true">
       <svg viewBox="0 0 28 28" fill="none">
@@ -855,7 +741,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
     </div>
     <div class="header-actions">
 
-      <!-- Random game -->
       <button class="icon-btn" id="randomBtn" data-tip="Random game" aria-label="Random game">
         <svg viewBox="0 0 24 24" fill="none">
           <path d="M16 3h5v5M8 3H3v5m13 13h5v-5M8 21H3v-5" stroke="var(--accent)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
@@ -863,7 +748,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
         </svg>
       </button>
 
-      <!-- View toggle: grid / list -->
       <button class="icon-btn" id="viewBtn" data-tip="Toggle list view" aria-pressed="false" aria-label="Toggle view">
         <svg viewBox="0 0 24 24" fill="none">
           <rect x="3" y="4" width="18" height="4" rx="1.5" fill="var(--accent)"/>
@@ -872,14 +756,12 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
         </svg>
       </button>
 
-      <!-- Dark mode -->
       <button class="icon-btn" id="themeBtn" data-tip="Toggle dark mode" aria-label="Toggle dark mode">
         <svg viewBox="0 0 24 24" fill="none">
           <path id="themeIcon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="var(--accent)" stroke="var(--accent)" stroke-width="1.3"/>
         </svg>
       </button>
 
-      <!-- Compact mode -->
       <button class="icon-btn" id="compactBtn" data-tip="Compact tiles" aria-pressed="false" aria-label="Toggle compact mode">
         <svg viewBox="0 0 24 24" fill="none">
           <rect x="2" y="2" width="9" height="9" rx="2" fill="var(--accent)"/>
@@ -889,7 +771,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
         </svg>
       </button>
 
-      <!-- Mute -->
       <button class="icon-btn" id="audioBtn" data-tip="Play / mute music" aria-pressed="false" aria-label="Toggle music">
         <svg id="audioIconSvg" viewBox="0 0 24 24" fill="none">
           <path d="M5 9v6h4l5 4V5L9 9H5z" fill="var(--accent)"/>
@@ -905,7 +786,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
     </div>
   </header>
 
-  <!-- Daily featured game -->
   <div class="featured-banner" id="featuredBanner" aria-label="Game of the day">
     <div class="featured-icon" id="featuredIcon">🎮</div>
     <div class="featured-text">
@@ -916,13 +796,11 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
     <a class="featured-link" id="featuredLink" href="#" target="_blank" rel="noopener">Play ↗</a>
   </div>
 
-  <!-- Recently visited -->
   <div class="recent-section" id="recentSection" style="display:none">
     <div class="recent-label">Recently visited</div>
     <div class="recent-strip" id="recentStrip"></div>
   </div>
 
-  <!-- Controls -->
   <div class="controls">
     <div class="search-wrap">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -941,13 +819,11 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
     <div class="filters" id="filterBar" role="group" aria-label="Filter by category"></div>
   </div>
 
-  <!-- Stats -->
   <div class="stats-bar">
     <span class="results-count" id="resultsCount">Loading…</span>
     <span id="activeFilterLabel" style="font-size:12px;"></span>
   </div>
 
-  <!-- Grid -->
   <div class="grid-shell">
     <div class="link-grid" id="linkGrid" role="list" aria-live="polite" aria-label="Games"></div>
     <div class="empty" id="emptyState">
@@ -960,7 +836,6 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
     </div>
   </div>
 
-  <!-- Footer -->
   <footer class="footer">
     <div class="note-pill">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
@@ -990,21 +865,9 @@ body.locked .app { filter: blur(8px); pointer-events: none; user-select: none; o
 'use strict';
 
 /* ======================================================================
-   ██████╗  █████╗ ████████╗ █████╗
-   DATA — HOW TO ADD LINKS
-   ─────────────────────────────────────────────────────────────────────
-   Add a new entry inside the LINKS array:
-     { name:"Game Name", url:"https://example.com/", cat:"hub", added:"2025-01-01" },
-
-   HOW TO ADD A CATEGORY
-   ─────────────────────────────────────────────────────────────────────
-   1. Choose a short key, e.g.  "action"
-   2. Add it to CAT_LABELS:     action: 'Action',
-   3. Use it on links:          cat:"action"
+   DATA
    ====================================================================== */
-
 const LINKS = [
-  /* ── .io Games ─────────────────────────────────────────────────── */
   { name:"Diep.io",              url:"https://diep.io/",                      cat:"io" },
   { name:"Wings.io",             url:"https://wings.io/",                     cat:"io" },
   { name:"Deeeep.io",            url:"https://deeeep.io/",                    cat:"io" },
@@ -1032,9 +895,7 @@ const LINKS = [
   { name:"FoodStars",            url:"https://foodstars.io/",                 cat:"io" },
   { name:"2v2.io",               url:"https://2v2.io/",                       cat:"io" },
   { name:"Veck.io",              url:"https://veck.io/",                      cat:"io" },
-  {name:"Rumblerush", url:"https://rumblerush.io/", cat:"io", added:"2026-03-18"},
-
-  /* ── Classic Games ──────────────────────────────────────────────── */
+  { name:"Rumblerush",           url:"https://rumblerush.io/",                cat:"io", added:"2026-03-18" },
   { name:"Chess.com",            url:"https://www.chess.com/",                cat:"classic" },
   { name:"Jetpack Joyride",      url:"https://jetpack-joyride.github.io/",    cat:"classic" },
   { name:"Tetris",               url:"https://www.lumpty.com/amusements/games/tetris/tetris.html", cat:"classic" },
@@ -1054,8 +915,6 @@ const LINKS = [
   { name:"Mario 64 Online",      url:"https://red404441.github.io/Mario64-online/", cat:"classic" },
   { name:"Osu!",                 url:"https://webosu.online/",                cat:"classic" },
   { name:"BloxD",                url:"https://bloxd.io/",                     cat:"classic" },
-
-  /* ── Game Hubs / Portals ────────────────────────────────────────── */
   { name:"Win10 Games Hub",      url:"https://win10.webjeet.me/",             cat:"hub" },
   { name:"Armor Games",          url:"https://armorgames.com/",               cat:"hub" },
   { name:"FreeGames.com",        url:"https://www.freegames.com/",            cat:"hub" },
@@ -1095,11 +954,8 @@ const LINKS = [
   { name:"UG17 Games",           url:"https://ug17.github.io/",               cat:"hub" },
   { name:"MAFA.com",             url:"https://www.mafa.com/",                 cat:"hub" },
   { name:"Games-Site",           url:"https://games-site.github.io/",         cat:"hub" },
-  {name:"Poki", url:"poki.com", cat:"hub", added:"2026-02-24"},
-  {name:"Soups Notes", url:"https://salmanhcetss.github.io/Notes_soup/", cat:"hub", added:"2026-02-24"},
-  {name:"Turbowarp", url:"https://turbowarp.org/", cat:"hub", added:"2026-02-26"},
-
-  /* ── Fun / Miscellaneous ────────────────────────────────────────── */
+  { name:"Soups Notes",          url:"https://salmanhcetss.github.io/Notes_soup/", cat:"hub", added:"2026-02-24" },
+  { name:"Turbowarp",            url:"https://turbowarp.org/",                cat:"hub", added:"2026-02-26" },
   { name:"QuickDraw",            url:"https://quickdraw.withgoogle.com/",     cat:"fun" },
   { name:"Neal.fun",             url:"https://neal.fun/",                     cat:"fun" },
   { name:"Akinator",             url:"https://en.akinator.com/",              cat:"fun" },
@@ -1123,10 +979,7 @@ const LINKS = [
   { name:"PIXEL VALLEY Online",  url:"https://scratch.mit.edu/projects/551905179/", cat:"fun" },
   { name:"Getting Over It Online",url:"https://scratch.mit.edu/projects/390983761/", cat:"fun" },
   { name:"Downgrade 2",          url:"https://turbowarp.org/1115559391/fullscreen?fps=60&clones=Infinity&limitless&hqpen&size=640x360", cat:"fun" },
-  {name:"youtube", url:"youtube.com", cat:"fun"},
-  
-
-  /* ── Retro / OS / Emulation ─────────────────────────────────────── */
+  { name:"YouTube",              url:"https://youtube.com/",                   cat:"fun" },
   { name:"EmuOS",                url:"https://emupedia.net/beta/emuos/",      cat:"retro" },
   { name:"Windows 93",           url:"https://v1.windows93.net/",             cat:"retro" },
   { name:"VirtualXP",            url:"https://lrusso.github.io/VirtualXP/VirtualXP.htm", cat:"retro" },
@@ -1136,28 +989,19 @@ const LINKS = [
   { name:"Internet Arcade",      url:"https://archive.org/details/internetarcade", cat:"retro" },
   { name:"RomsFun",              url:"https://romsfun.com/",                  cat:"retro" },
   { name:"JS Linux",             url:"https://bellard.org/jslinux/",          cat:"retro" },
-  {name:"Classicgameszone", url:"http://classicgameszone.com/", cat:"retro", added:"2026-03-06"},
-
-  /* ── Education ──────────────────────────────────────────────────── */
+  { name:"Classicgameszone",     url:"http://classicgameszone.com/",          cat:"retro", added:"2026-03-06" },
   { name:"Maths Playground",     url:"https://www.mathplayground.com/fun-skill-games.html", cat:"edu" },
   { name:"MathPlayZone Arcade",  url:"https://mathplayzone.com/arcade/",      cat:"edu" },
   { name:"Kahoot Bot",           url:"https://kahootbot.net/",                cat:"edu" },
   { name:"Duck Math",            url:"https://duckmath.org/",                 cat:"edu" },
   { name:"GN Math",              url:"https://gn-math.github.io/",            cat:"edu" },
   { name:"Memory Games",         url:"https://memory.toys/",                  cat:"edu" },
-
-  /* ── Simulation / RPG ───────────────────────────────────────────── */
   { name:"BitLife",              url:"https://bitlifeonline.io/home",          cat:"sim" },
   { name:"Fallen London",        url:"https://www.fallenlondon.com/",          cat:"sim" },
   { name:"Granblue Fantasy",     url:"https://granbluefantasy.jp/sp/en/",      cat:"sim" },
-
-  /* ── Proxy / Unblocker ──────────────────────────────────────────── */
-  {name:"Startpage", url:"https://startpage.com", cat:"proxy", added:"2026-02-25"},
+  { name:"Startpage",            url:"https://startpage.com/",                cat:"proxy", added:"2026-02-25" },
 ];
 
-/* ======================================================================
-   CATEGORIES
-   ====================================================================== */
 const CAT_LABELS = {
   all:     'All',
   io:      '.io Games',
@@ -1170,22 +1014,7 @@ const CAT_LABELS = {
   proxy:   'Unblocker',
 };
 
-/* ======================================================================
-   CONFIG
-   ─────────────────────────────────────────────────────────────────────
-   LOCK_HASH: SHA-256 of the access code. The plain-text code is NOT
-   stored here. To change the code:
-     1. Run in your browser console:
-        crypto.subtle.digest('SHA-256', new TextEncoder().encode('YOURNEWCODE'))
-          .then(b => console.log(Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('')))
-     2. Paste the resulting hex string as LOCK_HASH below.
-
-   Rate limiting: MAX_ATTEMPTS wrong guesses trigger a LOCKOUT_MS cooldown.
-   ====================================================================== */
 const CONFIG = {
-  LOCK_HASH:      '886b73d4b098e551f1dbb54ef2b55ef41981908b9b3c1b8fe7c442f26f0fa63d',
-  MAX_ATTEMPTS:    5,
-  LOCKOUT_MS:      30000,        // 30 seconds
   NEW_BADGE_DAYS:  14,
   RECENT_MAX:      8,
   AUDIO_SRC:       'Music.mp3',
@@ -1200,12 +1029,14 @@ const $ = id => document.getElementById(id);
 
 function favUrl(url){
   try{ return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=64`; }
-  catch{ return ''; }
+  catch(e){ return ''; }
 }
+
 function hostOf(url){
   try{ return new URL(url).hostname.replace(/^www\./, ''); }
-  catch{ return url; }
+  catch(e){ return url; }
 }
+
 const XP_FALLBACK = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect rx='7' width='40' height='40' fill='%23daf0ff'/%3E%3Crect x='6' y='12' width='28' height='16' rx='4' fill='%23b8e3f8'/%3E%3C/svg%3E`;
 
 function debounce(fn, ms){ let t; return (...a) => { clearTimeout(t); t = setTimeout(()=>fn(...a), ms); }; }
@@ -1225,44 +1056,13 @@ function isNew(added){
   return diff >= 0 && diff <= CONFIG.NEW_BADGE_DAYS;
 }
 
-/* ── SHA-256 helper ── */
-async function sha256(str) {
-  const buf  = new TextEncoder().encode(str);
-  const hash = await crypto.subtle.digest('SHA-256', buf);
-  return Array.from(new Uint8Array(hash))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
+/* Persistent storage */
+const Store = {
+  get(k, fallback=null){ try{ const v=localStorage.getItem(k); return v!=null?JSON.parse(v):fallback; }catch(e){ return fallback; } },
+  set(k, v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} },
+};
 
-/* ── Rate limiting helpers (session-scoped) ── */
-function getLockoutUntil(){ return parseInt(sessionStorage.getItem('gg_lock_until') || '0'); }
-function getAttempts()     { return parseInt(sessionStorage.getItem('gg_attempts')   || '0'); }
-function resetAttempts()   { sessionStorage.removeItem('gg_attempts'); sessionStorage.removeItem('gg_lock_until'); }
-function recordBadAttempt(){
-  const n = getAttempts() + 1;
-  sessionStorage.setItem('gg_attempts', n);
-  if(n >= CONFIG.MAX_ATTEMPTS) sessionStorage.setItem('gg_lock_until', Date.now() + CONFIG.LOCKOUT_MS);
-  return n;
-}
-
-/* ── Favicon lazy loader ── */
-const favCache = new Set();
-const faviconObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if(!entry.isIntersecting) return;
-    const img = entry.target;
-    const src = img.dataset.favSrc;
-    if(!src) return;
-    faviconObserver.unobserve(img);
-    if(favCache.has(src)){ img.src = src; return; }
-    const probe = new Image();
-    probe.onload  = () => { favCache.add(src); img.src = src; };
-    probe.onerror = () => {};
-    probe.src = src;
-  });
-}, { rootMargin: '200px' });
-
-/* ── Toast ── */
+/* Toast */
 let toastTimer;
 function showToast(text, ms=2200){
   $('toastMsg').textContent = text;
@@ -1270,12 +1070,6 @@ function showToast(text, ms=2200){
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => $('toast').classList.remove('show'), ms);
 }
-
-/* ── Persistent storage ── */
-const Store = {
-  get(k, fallback=null){ try{ const v=localStorage.getItem(k); return v!=null?JSON.parse(v):fallback; }catch{ return fallback; } },
-  set(k, v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch{} },
-};
 
 /* ======================================================================
    STATE
@@ -1288,6 +1082,7 @@ let isCompact    = Store.get('gg_compact',false);
 let isDark       = Store.get('gg_dark',false);
 let favourites   = new Set(Store.get('gg_favs',[]));
 let recentLinks  = Store.get('gg_recent',[]);
+let hasEntered   = Store.get('gg_entered', false);
 
 /* ======================================================================
    THEMING
@@ -1306,8 +1101,6 @@ function applyTheme(){
     icon.setAttribute('d','M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z');
     icon.setAttribute('fill','var(--accent)');
     icon.removeAttribute('stroke');
-    icon.removeAttribute('stroke-width');
-    icon.removeAttribute('stroke-linecap');
   }
 }
 
@@ -1333,6 +1126,23 @@ $('viewBtn').addEventListener('click', () => {
 });
 
 /* ======================================================================
+   TAP-TO-PLAY GATE
+   ====================================================================== */
+function enterGallery(){
+  hasEntered = true;
+  Store.set('gg_entered', true);
+  $('gateOverlay').classList.add('hidden');
+  showToast('Welcome! ✦ Music enabled', 2500);
+  SFX.unlock();
+  tryAutoplay();
+}
+
+$('gateBtn').addEventListener('click', enterGallery);
+$('gateOverlay').addEventListener('click', e => {
+  if(e.target === $('gateOverlay')) enterGallery();
+});
+
+/* ======================================================================
    DAILY FEATURED GAME
    ====================================================================== */
 function setupFeatured(){
@@ -1348,9 +1158,6 @@ function setupFeatured(){
     ? `Added ${new Date(game.added + 'T00:00').toLocaleDateString('en-IE',{day:'numeric',month:'long',year:'numeric'})}`
     : hostOf(game.url);
   $('featuredLink').href = game.url;
-
-  const label = $('featuredBanner').querySelector('.featured-label');
-  if(label) label.textContent = '✨ Newest Addition';
 }
 
 /* ======================================================================
@@ -1444,6 +1251,19 @@ function getFiltered(){
    ====================================================================== */
 const grid  = $('linkGrid');
 const empty = $('emptyState');
+const faviconObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if(!entry.isIntersecting) return;
+    const img = entry.target;
+    const src = img.dataset.favSrc;
+    if(!src) return;
+    faviconObserver.unobserve(img);
+    const probe = new Image();
+    probe.onload  = () => { img.src = src; };
+    probe.onerror = () => {};
+    probe.src = src;
+  });
+}, { rootMargin: '200px' });
 
 function render(){
   const list  = getFiltered();
@@ -1531,7 +1351,7 @@ function render(){
 const searchInput = $('searchInput');
 searchInput.addEventListener('input', debounce(e => { currentQuery=e.target.value; render(); }, 100));
 document.addEventListener('keydown', e => {
-  if(e.key==='/' && document.activeElement!==searchInput && !document.body.classList.contains('locked')){
+  if(e.key==='/' && document.activeElement!==searchInput){
     e.preventDefault(); searchInput.focus(); searchInput.select();
   }
   if(e.key==='Escape' && document.activeElement===searchInput){
@@ -1585,125 +1405,132 @@ $('spinnerOverlay').addEventListener('click', e => { if(e.target===$('spinnerOve
 /* ======================================================================
    AUDIO
    ====================================================================== */
-const audioBtn    = $('audioBtn');
-const speakerWaves= $('speakerWaves');
-const muteX       = $('muteX');
+const audioBtn     = $('audioBtn');
+const speakerWaves = $('speakerWaves');
+const muteX        = $('muteX');
 let audio   = null;
 let playing = false;
 
 function createAudio(){
   if(audio) return;
   audio = new Audio(CONFIG.AUDIO_SRC);
-  audio.loop=true; audio.volume=CONFIG.AUDIO_VOLUME; audio.preload='auto';
+  audio.loop = true;
+  audio.volume = CONFIG.AUDIO_VOLUME;
+  audio.preload = 'auto';
   audio.addEventListener('play',  () => { playing=true;  muteX.style.display='none'; speakerWaves.style.display=''; audioBtn.setAttribute('aria-pressed','true');  showToast('♪ Music playing'); });
   audio.addEventListener('pause', () => { playing=false; muteX.style.display='';     speakerWaves.style.display='none'; audioBtn.setAttribute('aria-pressed','false'); showToast('Music paused'); });
-  audio.addEventListener('error', () => { showToast('Music.mp3 not found — drop it in your repo.',4000); audio=null; playing=false; });
+  audio.addEventListener('error', () => { showToast('Music.mp3 not found — add it to your repo',4000); audio=null; playing=false; });
 }
 
 audioBtn.addEventListener('click', () => {
   createAudio();
   if(!audio) return;
-  playing ? audio.pause() : audio.play().catch(() => showToast('Tap play again to start music.',3000));
+  playing ? audio.pause() : audio.play().catch(() => showToast('Tap again to start music.',3000));
 });
-function tryAutoplay(){ createAudio(); if(audio) audio.play().catch(()=>{}); }
+
+function tryAutoplay(){
+  createAudio();
+  if(audio) audio.play().catch(()=>{});
+}
 
 /* ======================================================================
-   LOCK — SHA-256 hashed password + rate limiting
-   ─────────────────────────────────────────────────────────────────────
-   The plain-text access code is NEVER stored in this file.
-
-   Rate limiting: after MAX_ATTEMPTS wrong guesses the input locks for
-   LOCKOUT_MS milliseconds (tracked in sessionStorage, resets on tab close).
+   SOUND EFFECTS
    ====================================================================== */
-const overlay   = $('lockOverlay');
-const passInput = $('passInput');
-const errMsg    = $('errMsg');
-const errText   = $('errText');
+const SFX = (() => {
+  let ctx = null;
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
 
-let lockCountdown = null;
-
-function startLockoutCountdown(){
-  const btn = $('passBtn');
-  if(lockCountdown) clearInterval(lockCountdown);
-  lockCountdown = setInterval(() => {
-    const remaining = Math.ceil((getLockoutUntil() - Date.now()) / 1000);
-    if(remaining <= 0){
-      clearInterval(lockCountdown); lockCountdown = null;
-      resetAttempts();
-      btn.disabled = false;
-      btn.textContent = 'UNLOCK';
-      errText.textContent = 'You can try again now.';
-      passInput.disabled = false;
-      passInput.focus();
-    } else {
-      btn.disabled = true;
-      btn.textContent = `Wait ${remaining}s`;
-      passInput.disabled = true;
-      errMsg.classList.add('show');
-      errText.textContent = `Too many attempts — wait ${remaining}s.`;
-    }
-  }, 250);
-}
-
-function unlock(remember=true){
-  overlay.classList.add('hiding');
-  setTimeout(() => overlay.style.display='none', 420);
-  document.body.classList.remove('locked');
-  errMsg.classList.remove('show');
-  if(remember){ try{ sessionStorage.setItem('gg_unlocked','1'); }catch(_){} }
-  setTimeout(() => searchInput.focus(), 80);
-  tryAutoplay();
-  SFX.unlock();
-  showToast('Welcome to the Gallery ✦', 2500);
-}
-
-async function tryUnlock(){
-  // Check if still locked out
-  const lockUntil = getLockoutUntil();
-  if(lockUntil && Date.now() < lockUntil){ startLockoutCountdown(); return; }
-
-  const val = (passInput.value || '').trim();
-  passInput.value = ''; // clear immediately — value never sits in DOM
-
-  if(!val) return;
-
-  const hash = await sha256(val);
-
-  if(hash === CONFIG.LOCK_HASH){
-    resetAttempts();
-    unlock(true);
-  } else {
-    const attempts = recordBadAttempt();
-    const newLock  = getLockoutUntil();
-    SFX.error();
-    overlay.animate(
-      [{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'none'}],
-      {duration:260}
-    );
-    if(newLock && Date.now() < newLock){
-      startLockoutCountdown();
-    } else {
-      const left = CONFIG.MAX_ATTEMPTS - attempts;
-      errMsg.classList.add('show');
-      errText.textContent = left > 0
-        ? `Incorrect code — ${left} attempt${left===1?'':'s'} remaining.`
-        : 'Too many attempts.';
-      passInput.focus();
-    }
+  function getCtx(){
+    if(!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    return ctx;
   }
-}
 
-$('passBtn').addEventListener('click', tryUnlock);
-passInput.addEventListener('keydown', e => {
-  if(e.key === 'Enter'){ e.preventDefault(); tryUnlock(); }
-  if(e.key === 'Escape'){ passInput.value = ''; errMsg.classList.remove('show'); }
+  function tone(freq, type='sine', vol=0.08, duration=0.12, fadeOut=true){
+    if(prefersReducedMotion) return;
+    try{
+      const c  = getCtx();
+      const o  = c.createOscillator();
+      const g  = c.createGain();
+      o.connect(g);
+      g.connect(c.destination);
+      o.type      = type;
+      o.frequency.setValueAtTime(freq, c.currentTime);
+      g.gain.setValueAtTime(vol, c.currentTime);
+      if(fadeOut) g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
+      o.start(c.currentTime);
+      o.stop(c.currentTime + duration);
+    } catch(e){}
+  }
+
+  return {
+    hover()  { tone(880, 'sine',     0.04, 0.08); },
+    click()  { tone(660, 'triangle', 0.07, 0.10); },
+    fav()    { tone(1046,'sine',     0.06, 0.15); setTimeout(()=>tone(1318,'sine',0.05,0.12),80); },
+    unlock() { [523,659,784,1046].forEach((f,i) => setTimeout(()=>tone(f,'sine',0.06,0.18),i*70)); },
+    error()  { tone(220, 'sawtooth', 0.05, 0.18); },
+    random() { tone(784, 'sine',     0.06, 0.10); setTimeout(()=>tone(1046,'sine',0.05,0.10),90); },
+  };
+})();
+
+document.addEventListener('mouseover', e => { if(e.target.closest('.tile,.filter-btn,.icon-btn')) SFX.hover(); });
+document.addEventListener('mousedown', e => {
+  if(e.target.closest('.tile,.filter-btn,.icon-btn,.contribute-btn,.recent-chip,.gate-btn,.spinner-go')) SFX.click();
 });
 
-document.addEventListener('focusin', e => {
-  if(document.body.classList.contains('locked') && !overlay.contains(e.target)){
-    e.stopPropagation(); passInput.focus();
-  }
+/* ======================================================================
+   CUSTOM CURSOR
+   ====================================================================== */
+(function initCursor(){
+  const dot  = $('cursorDot');
+  const ring = $('cursorRing');
+  let rx=0,ry=0, tx=0,ty=0;
+
+  document.addEventListener('mousemove', e => {
+    tx = e.clientX; ty = e.clientY;
+    dot.style.left = tx+'px'; dot.style.top = ty+'px';
+  });
+
+  (function loop(){
+    rx += (tx-rx)*0.14;
+    ry += (ty-ry)*0.14;
+    ring.style.left = rx+'px'; ring.style.top = ry+'px';
+    requestAnimationFrame(loop);
+  })();
+
+  document.addEventListener('mouseover', e => {
+    const hoverable = e.target.closest('a,button,.tile,.filter-btn,.icon-btn,.contribute-btn,.recent-chip');
+    document.body.classList.toggle('cursor-hover', !!hoverable);
+  });
+
+  document.addEventListener('mousedown', () => {
+    document.body.classList.add('cursor-click');
+    setTimeout(()=>document.body.classList.remove('cursor-click'), 200);
+  });
+
+  document.addEventListener('mouseleave', () => { dot.style.opacity='0'; ring.style.opacity='0'; });
+  document.addEventListener('mouseenter', () => { dot.style.opacity='1'; ring.style.opacity='1'; });
+})();
+
+/* ======================================================================
+   KONAMI CODE EASTER EGG
+   ====================================================================== */
+const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+let konamiIdx = 0;
+document.addEventListener('keydown', e => {
+  if(e.key === KONAMI[konamiIdx]){ konamiIdx++; if(konamiIdx===KONAMI.length){ konamiIdx=0; konamiEgg(); } }
+  else konamiIdx=0;
 });
+
+function konamiEgg(){
+  showToast('🎮 +30 lives! (just kidding)', 3000);
+  document.querySelectorAll('.tile').forEach((t,i) => {
+    setTimeout(()=>{
+      t.style.transition='transform .4s cubic-bezier(.2,.9,.3,1)';
+      t.style.transform='rotate(360deg) scale(0.95)';
+      setTimeout(()=>{ t.style.transform=''; }, 420);
+    }, i*18);
+  });
+}
 
 /* ======================================================================
    SEASONAL THEMES
@@ -1746,103 +1573,6 @@ function setupSeason(){
 }
 
 /* ======================================================================
-   SOUND EFFECTS
-   ====================================================================== */
-const SFX = (() => {
-  let ctx = null;
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-
-  function getCtx(){
-    if(!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
-    return ctx;
-  }
-
-  function tone(freq, type='sine', vol=0.08, duration=0.12, fadeOut=true){
-    if(prefersReducedMotion) return;
-    try{
-      const c  = getCtx();
-      const o  = c.createOscillator();
-      const g  = c.createGain();
-      o.connect(g); g.connect(c.destination);
-      o.type      = type;
-      o.frequency.setValueAtTime(freq, c.currentTime);
-      g.gain.setValueAtTime(vol, c.currentTime);
-      if(fadeOut) g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
-      o.start(c.currentTime);
-      o.stop(c.currentTime + duration);
-    } catch(e){}
-  }
-
-  return {
-    hover()  { tone(880, 'sine',     0.04, 0.08); },
-    click()  { tone(660, 'triangle', 0.07, 0.10); },
-    fav()    { tone(1046,'sine',     0.06, 0.15); setTimeout(()=>tone(1318,'sine',0.05,0.12),80); },
-    unlock() { [523,659,784,1046].forEach((f,i) => setTimeout(()=>tone(f,'sine',0.06,0.18),i*70)); },
-    error()  { tone(220, 'sawtooth', 0.05, 0.18); },
-    random() { tone(784, 'sine',     0.06, 0.10); setTimeout(()=>tone(1046,'sine',0.05,0.10),90); },
-  };
-})();
-
-document.addEventListener('mouseover', e => { if(e.target.closest('.tile')) SFX.hover(); });
-document.addEventListener('mousedown', e => {
-  if(e.target.closest('.tile') || e.target.closest('button') || e.target.closest('a')) SFX.click();
-});
-
-/* ======================================================================
-   CUSTOM CURSOR
-   ====================================================================== */
-(function initCursor(){
-  const dot  = $('cursorDot');
-  const ring = $('cursorRing');
-  let rx=0,ry=0, tx=0,ty=0;
-
-  document.addEventListener('mousemove', e => {
-    tx = e.clientX; ty = e.clientY;
-    dot.style.left = tx+'px'; dot.style.top = ty+'px';
-  });
-
-  (function loop(){
-    rx += (tx-rx)*0.14;
-    ry += (ty-ry)*0.14;
-    ring.style.left = rx+'px'; ring.style.top = ry+'px';
-    requestAnimationFrame(loop);
-  })();
-
-  document.addEventListener('mouseover', e => {
-    const hoverable = e.target.closest('a,button,.tile,.filter-btn,.icon-btn,.contribute-btn,.unlock-btn,.recent-chip');
-    document.body.classList.toggle('cursor-hover', !!hoverable);
-  });
-
-  document.addEventListener('mousedown', () => {
-    document.body.classList.add('cursor-click');
-    setTimeout(()=>document.body.classList.remove('cursor-click'), 200);
-  });
-
-  document.addEventListener('mouseleave', () => { dot.style.opacity='0'; ring.style.opacity='0'; });
-  document.addEventListener('mouseenter', () => { dot.style.opacity='1'; ring.style.opacity='1'; });
-})();
-
-/* ======================================================================
-   KONAMI CODE EASTER EGG
-   ====================================================================== */
-const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
-let konamiIdx = 0;
-document.addEventListener('keydown', e => {
-  if(e.key === KONAMI[konamiIdx]){ konamiIdx++; if(konamiIdx===KONAMI.length){ konamiIdx=0; konamiEgg(); } }
-  else konamiIdx=0;
-});
-function konamiEgg(){
-  showToast('🎮 +30 lives! (just kidding)', 3000);
-  document.querySelectorAll('.tile').forEach((t,i) => {
-    setTimeout(()=>{
-      t.style.transition='transform .4s cubic-bezier(.2,.9,.3,1)';
-      t.style.transform='rotate(360deg) scale(0.95)';
-      setTimeout(()=>{ t.style.transform=''; }, 420);
-    }, i*18);
-  });
-}
-
-/* ======================================================================
    INIT
    ====================================================================== */
 window.addEventListener('DOMContentLoaded', () => {
@@ -1855,17 +1585,12 @@ window.addEventListener('DOMContentLoaded', () => {
   renderRecent();
   render();
 
-  // Check if already unlocked this session
-  try{
-    if(sessionStorage.getItem('gg_unlocked')==='1'){
-      unlock(false); tryAutoplay();
-    } else {
-      // Check for leftover lockout on page load
-      const lockUntil = getLockoutUntil();
-      if(lockUntil && Date.now() < lockUntil) startLockoutCountdown();
-      passInput.focus();
-    }
-  } catch(_){ passInput.focus(); }
+  if(hasEntered){
+    $('gateOverlay').classList.add('hidden');
+    tryAutoplay();
+  } else {
+    searchInput.blur();
+  }
 });
 </script>
 </body>
