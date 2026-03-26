@@ -9,6 +9,7 @@ Licensed under CC BY 4.0
 https://creativecommons.org/licenses/by/4.0/
 
 little bird is: https://github.com/IdreesInc/Pocket-Bird?tab=readme-ov-file#your-own-website
+full credits for the bird go to: https://github.com/IdreesInc
 
 some sites may be broken/blocked. this isnt my fault and is either your network filtering options or it is the people behind the site. if you find any issues please let me know
 ![Screenshot of project](Image.png)
