@@ -2,7 +2,7 @@
 # Game-gallery
 I made this site for fun in school using a collection of game links i made.
 Made with help from chatGPT and Claude.ai
-<H1>No ads, No trackers, no paywalls</H1>
+
 
 Song used is:
 "Palm Mall" by [猫 シ Corp.]  
