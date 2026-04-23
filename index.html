@@ -2,15 +2,18 @@
 <html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>CJ Falons Ebook Reader</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Google</title>
 
 <!-- PWA MANIFEST -->
 <link rel="manifest" href="manifest.json"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png"/>
+
+<!-- Google's real multicolour G favicon as inline SVG — looks like a real Google tab -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath fill='%234285F4' d='M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z'/%3E%3Cpath fill='%2334A853' d='M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z'/%3E%3Cpath fill='%23FBBC05' d='M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z'/%3E%3Cpath fill='%23EA4335' d='M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.96 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z'/%3E%3C/svg%3E"/>
 <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png"/>
-<meta name="theme-color" content="#6ec6f5"/>
+
+<!-- theme-color updated dynamically via JS for dark mode -->
+<meta name="theme-color" id="themeColorMeta" content="#6ec6f5"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="description" content="A curated gallery of browser games — Frutiger Aero Edition"/>
@@ -86,7 +89,11 @@ body {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
     linear-gradient(175deg, var(--sky-top) 0%, var(--sky-mid) 40%, var(--sky-low) 75%, #f0faff 100%);
   background-attachment: fixed;
-  padding: 20px 16px 48px;
+  /* safe-area-inset: respects notches & home bars on modern phones */
+  padding: calc(20px + env(safe-area-inset-top))
+           calc(16px + env(safe-area-inset-right))
+           calc(48px + env(safe-area-inset-bottom))
+           calc(16px + env(safe-area-inset-left));
 }
 
 [data-theme="dark"] body {
@@ -109,6 +116,26 @@ body::after {
   background: radial-gradient(circle, rgba(70,196,227,0.14), transparent 65%);
   bottom: -120px; left: -120px;
 }
+
+/* ======================================================================
+   SKIP LINK — lets keyboard/screen-reader users jump past navigation
+   ====================================================================== */
+.skip-link {
+  position: fixed;
+  top: -100%;
+  left: 16px;
+  z-index: 999999;
+  background: var(--accent);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top .2s;
+}
+.skip-link:focus { top: 0; }
 
 /* ======================================================================
    SEASONAL THEMES
@@ -194,17 +221,23 @@ body::after {
   font-family: var(--font-display); font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
   box-shadow: 0 8px 22px rgba(14,127,204,0.30);
   transition: transform var(--ease), box-shadow var(--ease);
+  /* Ensure 44px minimum touch target */
+  min-height: 44px;
 }
 .gate-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(14,127,204,0.38); }
 .gate-btn:active { transform: scale(.97); }
 
 /* ======================================================================
-   CUSTOM CURSOR
+   CUSTOM CURSOR  — disabled on touch/pointer:coarse devices
    ====================================================================== */
-body,input,select,button,a,[role="button"] { cursor:none; }
+/* Only hide the OS cursor on true pointer devices */
+@media (hover: hover) and (pointer: fine) {
+  body, select, button, a, [role="button"], .tile { cursor: none; }
+  /* Keep real cursor on text inputs — hiding it makes them unusable */
+  input, textarea { cursor: text; }
+}
 @media (hover:none) {
-  body,input,select,button,a,[role="button"] { cursor:auto; }
-  .cursor-dot,.cursor-ring { display:none !important; }
+  .cursor-dot, .cursor-ring { display: none !important; }
 }
 
 .cursor-dot {
@@ -281,6 +314,7 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
   background: linear-gradient(145deg,#d4f0ff,#aadaf5);
   box-shadow: 0 4px 14px rgba(0,80,160,0.12), inset 0 1px 0 rgba(255,255,255,0.7);
   display: flex; align-items: center; justify-content: center;
+  /* 44px minimum touch target achieved via 46px width */
 }
 [data-theme="dark"] .header-logo { background: linear-gradient(145deg,#0e2a42,#0d3555); }
 .header-logo svg { width: 24px; height: 24px; }
@@ -291,15 +325,16 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
 }
 .header-text .tagline { font-size: 11.5px; color: var(--text-soft); margin-top: 3px; }
 
-.header-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.header-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 .icon-btn {
-  width: 40px; height: 40px; border-radius: 50%;
+  /* 44px minimum touch target for accessibility */
+  width: 44px; height: 44px; border-radius: 50%;
   border: 1px solid var(--glass-border);
   background: linear-gradient(145deg,rgba(255,255,255,0.85),rgba(220,243,255,0.75));
   box-shadow: 0 4px 12px var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,0.6);
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: transform var(--ease), box-shadow var(--ease), background var(--ease);
+  transition: transform var(--ease), box-shadow var(--ease), background var(--ease);
   flex-shrink: 0; position: relative;
 }
 [data-theme="dark"] .icon-btn {
@@ -312,6 +347,7 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
   background: linear-gradient(145deg,rgba(14,127,204,0.18),rgba(70,196,227,0.12));
 }
 
+/* Tooltip — CSS-only for sighted users; title attr provides screen reader text */
 .icon-btn::after {
   content: attr(data-tip);
   position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
@@ -329,6 +365,8 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
   box-shadow: 0 6px 18px rgba(14,127,204,0.26);
   transition: transform var(--ease), box-shadow var(--ease);
   white-space: nowrap;
+  /* 44px touch target */
+  min-height: 44px; display: flex; align-items: center;
 }
 .contribute-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(14,127,204,0.34); }
 
@@ -337,7 +375,7 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
   background: linear-gradient(135deg,rgba(14,127,204,0.12),rgba(70,196,227,0.10));
   border: 1px solid rgba(14,127,204,0.18);
   border-radius: var(--radius-md); padding: 12px 16px;
-  display: flex; align-items: center; gap: 14px;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
   backdrop-filter: blur(12px); animation: fadeSlide .5s var(--ease) both;
 }
 [data-theme="dark"] .featured-banner {
@@ -361,11 +399,12 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
 .featured-name { font-weight: 600; font-size: 14px; color: var(--text); }
 .featured-host { font-size: 12px; color: var(--text-soft); }
 .featured-link {
-  flex-shrink: 0; padding: 8px 14px; border-radius: var(--radius-sm);
+  flex-shrink: 0; padding: 10px 14px; border-radius: var(--radius-sm);
   background: var(--accent); color: white; text-decoration: none;
   font-size: 12px; font-weight: 600; font-family: var(--font-body);
   box-shadow: 0 4px 12px rgba(14,127,204,0.26);
   transition: transform var(--ease), box-shadow var(--ease);
+  min-height: 44px; display: flex; align-items: center;
 }
 .featured-link:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(14,127,204,0.34); }
 
@@ -373,7 +412,7 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
 .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 .search-wrap {
-  flex: 1; min-width: 180px;
+  flex: 1; min-width: 200px;
   display: flex; align-items: center; gap: 9px;
   background: var(--glass-bg); border: 1px solid var(--glass-border);
   border-radius: var(--radius-md); padding: 10px 13px;
@@ -389,35 +428,61 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
 .search-wrap input {
   border: 0; outline: none; font-size: 15px; background: transparent;
   width: 100%; color: var(--text); font-family: var(--font-body);
+  /* Always keep real cursor on text input */
+  cursor: text;
+  /* comfortable tap height */
+  min-height: 28px;
 }
 .search-wrap input::placeholder { color: var(--text-soft); opacity: 0.7; }
 .search-shortcut {
   flex-shrink: 0; background: rgba(0,80,140,0.07); border: 1px solid rgba(0,80,140,0.12);
   border-radius: 5px; padding: 2px 6px; font-size: 11px; color: var(--text-soft);
 }
+/* Hide shortcut hint on mobile — nobody types / on a phone */
+@media (hover: none) { .search-shortcut { display: none; } }
 
 .sort-select {
   padding: 9px 12px; border-radius: var(--radius-md);
   border: 1px solid var(--glass-border); background: var(--glass-bg);
   color: var(--text); font-size: 13px; font-family: var(--font-body);
-  outline: none; cursor: pointer;
+  outline: none;
   backdrop-filter: blur(12px);
   box-shadow: 0 4px 14px var(--glass-shadow);
+  /* 44px touch target */
+  min-height: 44px;
 }
 
-.filters { display: flex; gap: 7px; flex-wrap: wrap; }
+/* Filter tabs — scrollable strip so filters never disappear on small screens */
+.filters-wrap {
+  width: 100%;
+  overflow-x: auto;
+  /* hide scrollbar visually but keep it functional */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.filters-wrap::-webkit-scrollbar { display: none; }
+
+.filters {
+  display: flex; gap: 7px;
+  width: max-content; /* let content set width so it can overflow + scroll */
+  padding-bottom: 2px; /* prevent clipped focus rings */
+}
 .filter-btn {
-  padding: 7px 13px; border-radius: 100px;
+  padding: 10px 14px; border-radius: 100px;
   border: 1px solid rgba(0,80,140,0.12);
   background: rgba(255,255,255,0.55); font-size: 12px;
-  color: var(--text-mid); cursor: pointer;
+  color: var(--text-mid);
   backdrop-filter: blur(8px);
   transition: background var(--ease), border-color var(--ease), color var(--ease), transform var(--ease);
   font-weight: 500; font-family: var(--font-body);
+  /* 44px min touch target */
+  min-height: 44px; display: flex; align-items: center;
+  white-space: nowrap;
 }
 [data-theme="dark"] .filter-btn { background: rgba(20,50,90,0.5); border-color: rgba(255,255,255,0.08); }
 .filter-btn:hover { background: rgba(255,255,255,0.82); transform: translateY(-1px); }
-.filter-btn.active {
+.filter-btn.active,
+.filter-btn[aria-selected="true"] {
   background: linear-gradient(145deg,var(--accent),#0a6ab5); color: white;
   border-color: transparent; box-shadow: 0 4px 14px rgba(14,127,204,0.28);
 }
@@ -457,7 +522,7 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
 .tile {
   position: relative; display: flex; align-items: center; gap: 11px;
   padding: 13px 13px; border-radius: var(--radius-md); text-decoration: none;
-  color: var(--text); overflow: hidden; cursor: pointer;
+  color: var(--text); overflow: hidden;
   background: linear-gradient(150deg,rgba(255,255,255,0.84),rgba(232,248,255,0.74));
   border: 1px solid var(--glass-border);
   box-shadow: 0 4px 14px rgba(0,40,90,0.06);
@@ -507,14 +572,17 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
 
 .tile-fav {
   position: absolute; top: 8px; right: 8px;
-  width: 24px; height: 24px; border-radius: 50%; border: 0;
-  background: rgba(255,255,255,0.6); cursor: pointer;
+  /* 44px touch target via padding trick */
+  width: 32px; height: 32px; border-radius: 50%; border: 0;
+  background: rgba(255,255,255,0.6);
   display: flex; align-items: center; justify-content: center;
   opacity: 0; transition: opacity .2s, transform .2s, background .2s;
   z-index: 2;
 }
 [data-theme="dark"] .tile-fav { background: rgba(30,60,100,0.6); }
 .tile:hover .tile-fav, .tile-fav.active { opacity: 1; }
+/* Always show fav btn on touch so it's tappable */
+@media (hover: none) { .tile-fav { opacity: 1; } }
 .tile-fav svg { width: 13px; height: 13px; pointer-events: none; }
 .tile-fav.active { background: rgba(245,166,35,0.15); }
 .tile-fav.active svg path { fill: var(--star-active); stroke: var(--star-active); }
@@ -531,27 +599,36 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
 .tile-report {
   position: absolute; bottom: 8px; left: 8px;
   background: rgba(192,57,43,0.10); border: 1px solid rgba(192,57,43,0.15);
-  border-radius: 6px; padding: 2px 8px;
-  color: var(--danger); font-size: 10px; font-weight: 600; cursor: pointer;
+  border-radius: 6px; padding: 4px 8px;
+  color: var(--danger); font-size: 10px; font-weight: 600;
   opacity: 0; transition: opacity .2s; z-index: 2;
   display: flex; align-items: center; gap: 4px;
+  min-height: 28px;
 }
 .tile:hover .tile-report { opacity: 1; }
+@media (hover: none) { .tile-report { display: none; } } /* replaced by long-press on mobile */
 
 .recent-section { display: flex; flex-direction: column; gap: 8px; }
 .recent-label {
   font-size: 11px; font-weight: 600; color: var(--text-soft);
   text-transform: uppercase; letter-spacing: 0.6px;
 }
-.recent-strip { display: flex; gap: 8px; flex-wrap: wrap; }
+.recent-strip {
+  display: flex; gap: 8px;
+  overflow-x: auto; padding-bottom: 4px;
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.recent-strip::-webkit-scrollbar { display: none; }
 .recent-chip {
   display: flex; align-items: center; gap: 7px;
-  padding: 6px 11px; border-radius: 100px; text-decoration: none;
+  padding: 8px 11px; border-radius: 100px; text-decoration: none;
   background: var(--glass-bg); border: 1px solid var(--glass-border);
   font-size: 12px; color: var(--text-mid); font-weight: 500;
   box-shadow: 0 3px 10px var(--glass-shadow);
   transition: transform var(--ease), box-shadow var(--ease);
   backdrop-filter: blur(8px);
+  white-space: nowrap; flex-shrink: 0;
+  min-height: 44px;
 }
 .recent-chip:hover { transform: translateY(-2px); box-shadow: 0 8px 18px var(--glass-shadow); }
 .recent-chip img { width: 16px; height: 16px; border-radius: 4px; object-fit: contain; }
@@ -574,6 +651,8 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
 }
 .spinner-overlay.open { opacity: 1; pointer-events: all; }
 .spinner-card {
+  /* Moved from inline style to CSS */
+  position: relative;
   width: min(400px,90vw);
   background: var(--glass-bg); border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg); padding: 32px 28px;
@@ -588,28 +667,32 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
 .spinner-title { font-family: var(--font-display); font-size: 16px; font-weight: 900; color: var(--text); }
 .spinner-name { font-size: 20px; font-weight: 700; color: var(--accent); font-family: var(--font-display); }
 .spinner-host { font-size: 13px; color: var(--text-soft); }
-.spinner-actions { display: flex; gap: 10px; margin-top: 4px; }
+.spinner-actions { display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap; justify-content: center; }
 .spinner-go {
-  padding: 11px 22px; border-radius: var(--radius-md); border: 0; cursor: pointer;
+  padding: 11px 22px; border-radius: var(--radius-md); border: 0;
   background: linear-gradient(145deg,var(--accent),#0a6ab5); color: white;
   font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
   box-shadow: 0 6px 18px rgba(14,127,204,0.28);
   transition: transform var(--ease), box-shadow var(--ease);
-  text-decoration: none; display: inline-block;
+  text-decoration: none; display: inline-flex; align-items: center;
+  min-height: 44px;
 }
 .spinner-go:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(14,127,204,0.36); }
 .spinner-again {
   padding: 11px 16px; border-radius: var(--radius-md); border: 1px solid var(--glass-border);
   background: var(--glass-bg); color: var(--text-mid);
-  font-family: var(--font-body); font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: var(--font-body); font-size: 13px; font-weight: 600;
   transition: background var(--ease);
+  min-height: 44px;
 }
 .spinner-again:hover { background: rgba(255,255,255,0.85); }
 .spinner-close {
   position: absolute; top: 14px; right: 14px;
-  width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--glass-border);
-  background: var(--glass-bg); cursor: pointer; display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--glass-border);
+  background: var(--glass-bg); display: flex; align-items: center; justify-content: center;
   font-size: 16px; color: var(--text-soft);
+  /* 44px target via padding */
+  min-width: 44px; min-height: 44px;
 }
 
 .footer {
@@ -627,7 +710,7 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
 [data-theme="dark"] .note-pill { background: rgba(14,34,68,0.6); border-color: rgba(255,255,255,0.08); }
 
 .toast {
-  position: fixed; bottom: 20px; right: 20px; z-index: 99999;
+  position: fixed; bottom: calc(20px + env(safe-area-inset-bottom)); right: 20px; z-index: 99999;
   background: rgba(255,255,255,0.92); border: 1px solid var(--glass-border);
   border-radius: var(--radius-md); padding: 10px 16px;
   box-shadow: 0 12px 32px rgba(0,30,60,0.14);
@@ -641,6 +724,7 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
 .toast.show { opacity: 1; transform: none; }
 .toast-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
 
+/* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
@@ -649,26 +733,42 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
 }
 ::-webkit-scrollbar-thumb:hover { background: rgba(14,127,204,0.30); }
 
-*:focus-visible { outline: 3px solid var(--accent-glow); outline-offset: 3px; }
+/* ── Focus styles — visible ring for keyboard nav ── */
+*:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+/* Tiles already have border-radius */
+.tile:focus-visible { outline-offset: 2px; }
 
-@media (max-width:680px) {
+/* ======================================================================
+   RESPONSIVE
+   ====================================================================== */
+@media (max-width: 680px) {
   .link-grid { grid-template-columns: repeat(auto-fill,minmax(150px,1fr)); }
   .header-text h1 { font-size: 13px; }
-  .contribute-btn { display: none; }
-  .sort-select { display: none; }
+  /* Contribute btn: shrink to icon on small screens */
+  .contribute-btn span { display: none; }
   .header { padding: 10px 12px; gap: 10px; }
-  .icon-btn { width: 36px; height: 36px; }
+  .icon-btn { width: 44px; height: 44px; }
 }
-@media (max-width:400px) {
+@media (max-width: 480px) {
+  /* Show sort select as full-width row below search on very small screens */
+  .controls { flex-direction: column; align-items: stretch; }
+  .search-wrap { min-width: unset; }
+  .sort-select { width: 100%; }
   .link-grid { grid-template-columns: 1fr 1fr; }
-  .filters { display: none; }
 }
 </style>
 </head>
 
 <body>
 
-<!-- Custom cursor -->
+<!-- Skip to main content — first interactive element, helps keyboard/screen-reader users -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- Custom cursor (hidden on touch devices via CSS) -->
 <div class="cursor-dot"  id="cursorDot"  aria-hidden="true"></div>
 <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
 
@@ -701,31 +801,32 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
     </div>
     <div>
       <div class="gate-heading" id="gateTitle">Welcome to the Gallery</div>
-      <div class="gate-sub">Tap below to enter & enable music.</div>
+      <div class="gate-sub">Tap below to enter &amp; enable music.</div>
     </div>
     <button class="gate-btn" id="gateBtn">Enter ↗</button>
   </div>
 </div>
 
 <!-- Random game spinner -->
-<div class="spinner-overlay" id="spinnerOverlay" role="dialog" aria-modal="true" aria-label="Random game">
-  <div class="spinner-card" style="position:relative;">
-    <button class="spinner-close" id="spinnerClose" aria-label="Close">×</button>
-    <div class="spinner-emoji">🎲</div>
+<div class="spinner-overlay" id="spinnerOverlay" role="dialog" aria-modal="true" aria-label="Random game" aria-hidden="true">
+  <div class="spinner-card">
+    <button class="spinner-close" id="spinnerClose" aria-label="Close random game dialog" title="Close">×</button>
+    <div class="spinner-emoji" aria-hidden="true">🎲</div>
     <div class="spinner-title">Your random game is…</div>
-    <div class="spinner-name" id="spinnerName">—</div>
+    <div class="spinner-name" id="spinnerName" aria-live="polite">—</div>
     <div class="spinner-host" id="spinnerHost">—</div>
     <div class="spinner-actions">
-      <a class="spinner-go" id="spinnerGo" href="#" target="_blank" rel="noopener">Play now ↗</a>
+      <a class="spinner-go" id="spinnerGo" href="#" target="_blank" rel="noopener noreferrer">Play now ↗</a>
       <button class="spinner-again" id="spinnerAgain">Try another</button>
     </div>
   </div>
 </div>
 
-<!-- Main app -->
+<!-- Main app — wrapped in <main> landmark for screen readers -->
+<main id="main-content">
 <div class="app" id="app" data-view="grid">
 
-  <header class="header">
+  <header class="header" role="banner">
     <div class="header-logo" aria-hidden="true">
       <svg viewBox="0 0 28 28" fill="none">
         <rect x="3" y="8" width="22" height="14" rx="4" stroke="#0e7fcc" stroke-width="1.7"/>
@@ -739,31 +840,31 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
       <h1>The Game Gallery</h1>
       <div class="tagline">Frutiger Aero Edition · all links open in new tab<span class="season-pill" id="seasonPill"></span></div>
     </div>
-    <div class="header-actions">
+    <nav class="header-actions" aria-label="Gallery controls">
 
-      <button class="icon-btn" id="randomBtn" data-tip="Random game" aria-label="Random game">
-        <svg viewBox="0 0 24 24" fill="none">
+      <button class="icon-btn" id="randomBtn" data-tip="Random game" aria-label="Pick a random game" title="Random game">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M16 3h5v5M8 3H3v5m13 13h5v-5M8 21H3v-5" stroke="var(--accent)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
           <circle cx="12" cy="12" r="2" fill="var(--accent)"/>
         </svg>
       </button>
 
-      <button class="icon-btn" id="viewBtn" data-tip="Toggle list view" aria-pressed="false" aria-label="Toggle view">
-        <svg viewBox="0 0 24 24" fill="none">
+      <button class="icon-btn" id="viewBtn" data-tip="Toggle list view" aria-pressed="false" aria-label="Toggle list view" title="Toggle list view">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <rect x="3" y="4" width="18" height="4" rx="1.5" fill="var(--accent)"/>
           <rect x="3" y="10" width="18" height="4" rx="1.5" fill="var(--accent)" opacity=".6"/>
           <rect x="3" y="16" width="18" height="4" rx="1.5" fill="var(--accent)" opacity=".3"/>
         </svg>
       </button>
 
-      <button class="icon-btn" id="themeBtn" data-tip="Toggle dark mode" aria-label="Toggle dark mode">
-        <svg viewBox="0 0 24 24" fill="none">
+      <button class="icon-btn" id="themeBtn" data-tip="Toggle dark mode" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path id="themeIcon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="var(--accent)" stroke="var(--accent)" stroke-width="1.3"/>
         </svg>
       </button>
 
-      <button class="icon-btn" id="compactBtn" data-tip="Compact tiles" aria-pressed="false" aria-label="Toggle compact mode">
-        <svg viewBox="0 0 24 24" fill="none">
+      <button class="icon-btn" id="compactBtn" data-tip="Compact tiles" aria-pressed="false" aria-label="Toggle compact tile mode" title="Compact tiles">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <rect x="2" y="2" width="9" height="9" rx="2" fill="var(--accent)"/>
           <rect x="13" y="2" width="9" height="9" rx="2" fill="var(--accent)" opacity=".6"/>
           <rect x="2" y="13" width="9" height="9" rx="2" fill="var(--accent)" opacity=".6"/>
@@ -771,8 +872,8 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
         </svg>
       </button>
 
-      <button class="icon-btn" id="audioBtn" data-tip="Play / mute music" aria-pressed="false" aria-label="Toggle music">
-        <svg id="audioIconSvg" viewBox="0 0 24 24" fill="none">
+      <button class="icon-btn" id="audioBtn" data-tip="Play / mute music" aria-pressed="false" aria-label="Toggle background music" title="Play / mute music">
+        <svg id="audioIconSvg" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M5 9v6h4l5 4V5L9 9H5z" fill="var(--accent)"/>
           <g id="speakerWaves">
             <path d="M16.5 8.5a5 5 0 0 1 0 7" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round"/>
@@ -782,52 +883,58 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
         </svg>
       </button>
 
-      <a class="contribute-btn" href="https://github.com/Red404441/Games-gallery-" target="_blank" rel="noopener">Contribute ↗</a>
-    </div>
+      <a class="contribute-btn" href="https://github.com/Red404441/Games-gallery-" target="_blank" rel="noopener noreferrer" aria-label="Contribute on GitHub (opens in new tab)">
+        <span>Contribute ↗</span>
+      </a>
+    </nav>
   </header>
 
   <div class="featured-banner" id="featuredBanner" aria-label="Game of the day">
-    <div class="featured-icon" id="featuredIcon">🎮</div>
+    <div class="featured-icon" id="featuredIcon" aria-hidden="true">🎮</div>
     <div class="featured-text">
       <div class="featured-label">☀️ Game of the Day</div>
       <div class="featured-name" id="featuredName">Loading…</div>
       <div class="featured-host" id="featuredHost"></div>
     </div>
-    <a class="featured-link" id="featuredLink" href="#" target="_blank" rel="noopener">Play ↗</a>
+    <a class="featured-link" id="featuredLink" href="#" target="_blank" rel="noopener noreferrer">Play ↗</a>
   </div>
 
-  <div class="recent-section" id="recentSection" style="display:none">
-    <div class="recent-label">Recently visited</div>
+  <div class="recent-section" id="recentSection" style="display:none" aria-label="Recently visited games">
+    <div class="recent-label" aria-hidden="true">Recently visited</div>
     <div class="recent-strip" id="recentStrip"></div>
   </div>
 
   <div class="controls">
-    <div class="search-wrap">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <div class="search-wrap" role="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M21 21l-4.35-4.35" stroke="var(--text-mid)" stroke-width="1.8" stroke-linecap="round"/>
         <circle cx="11" cy="11" r="7" stroke="var(--text-mid)" stroke-width="1.8"/>
       </svg>
       <input id="searchInput" type="search" placeholder="Search games… (press /)" aria-label="Search games" autocomplete="off" spellcheck="false"/>
-      <kbd class="search-shortcut">/</kbd>
+      <kbd class="search-shortcut" aria-hidden="true">/</kbd>
     </div>
-    <select class="sort-select" id="sortSelect" aria-label="Sort games">
+    <select class="sort-select" id="sortSelect" aria-label="Sort games by">
       <option value="default">Default order</option>
       <option value="az">A → Z</option>
       <option value="za">Z → A</option>
       <option value="favs">Favourites first</option>
     </select>
-    <div class="filters" id="filterBar" role="group" aria-label="Filter by category"></div>
+  </div>
+
+  <!-- Filter tabs — wrapped for horizontal scrolling on narrow screens -->
+  <div class="filters-wrap">
+    <div class="filters" id="filterBar" role="tablist" aria-label="Filter games by category"></div>
   </div>
 
   <div class="stats-bar">
-    <span class="results-count" id="resultsCount">Loading…</span>
-    <span id="activeFilterLabel" style="font-size:12px;"></span>
+    <span class="results-count" id="resultsCount" aria-live="polite" aria-atomic="true">Loading…</span>
+    <span id="activeFilterLabel" aria-live="polite" style="font-size:12px;"></span>
   </div>
 
   <div class="grid-shell">
-    <div class="link-grid" id="linkGrid" role="list" aria-live="polite" aria-label="Games"></div>
-    <div class="empty" id="emptyState">
-      <svg viewBox="0 0 24 24" fill="none">
+    <div class="link-grid" id="linkGrid" role="list" aria-label="Games list"></div>
+    <div class="empty" id="emptyState" role="status">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <circle cx="12" cy="12" r="10" stroke="var(--text-soft)" stroke-width="1.5"/>
         <path d="M9 9l6 6m0-6l-6 6" stroke="var(--text-soft)" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
@@ -836,9 +943,9 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
     </div>
   </div>
 
-  <footer class="footer">
+  <footer class="footer" role="contentinfo">
     <div class="note-pill">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <circle cx="12" cy="12" r="10" stroke="var(--text-soft)" stroke-width="1.6"/>
         <path d="M12 8v5" stroke="var(--text-soft)" stroke-width="1.6" stroke-linecap="round"/>
         <circle cx="12" cy="16.5" r="1" fill="var(--text-soft)"/>
@@ -846,15 +953,16 @@ body.cursor-click .cursor-ring { width:26px;height:26px; }
       Some links may be blocked by filters. Report broken links via GitHub.
     </div>
     <div>
-      <a href="https://github.com/Red404441/Games-gallery-" target="_blank" rel="noopener">GitHub ↗</a>
+      <a href="https://github.com/Red404441/Games-gallery-" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
       &nbsp;·&nbsp; Built with ☁️
     </div>
   </footer>
 </div>
+</main>
 
-<!-- Toast -->
-<div class="toast" id="toast" role="status" aria-live="polite">
-  <div class="toast-dot"></div>
+<!-- Toast notification -->
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true">
+  <div class="toast-dot" aria-hidden="true"></div>
   <span id="toastMsg"></span>
 </div>
 
@@ -907,7 +1015,7 @@ const LINKS = [
   { name:"NoInternetGame",       url:"https://nointernetgame.com/",           cat:"classic" },
   { name:"CatMario",             url:"https://catmario.eu/",                  cat:"classic" },
   { name:"MCraft",               url:"https://mcraft.fun/",                   cat:"classic" },
-  { name:"Eaglercraft",          url:"https://eaglercraft.q13x.com/1.8-js/?retina=true", cat:"classic" },
+  { name:"Eaglercraft (JS)",     url:"https://eaglercraft.q13x.com/1.8-js/?retina=true", cat:"classic" },
   { name:"Cookie Clicker",       url:"https://cookieclicker.one/",            cat:"classic" },
   { name:"PokeRogue",            url:"https://pokerogue.io/",                 cat:"classic" },
   { name:"Tetr.io",              url:"https://tetr.io/",                      cat:"classic" },
@@ -915,6 +1023,7 @@ const LINKS = [
   { name:"Mario 64 Online",      url:"https://red404441.github.io/Mario64-online/", cat:"classic" },
   { name:"Osu!",                 url:"https://webosu.online/",                cat:"classic" },
   { name:"BloxD",                url:"https://bloxd.io/",                     cat:"classic" },
+  { name:"Eaglercraft",          url:"https://eaglercraft.com/",              cat:"classic", added:"2026-03-25" },
   { name:"Win10 Games Hub",      url:"https://win10.webjeet.me/",             cat:"hub" },
   { name:"Armor Games",          url:"https://armorgames.com/",               cat:"hub" },
   { name:"FreeGames.com",        url:"https://www.freegames.com/",            cat:"hub" },
@@ -956,6 +1065,7 @@ const LINKS = [
   { name:"Games-Site",           url:"https://games-site.github.io/",         cat:"hub" },
   { name:"Soups Notes",          url:"https://salmanhcetss.github.io/Notes_soup/", cat:"hub", added:"2026-02-24" },
   { name:"Turbowarp",            url:"https://turbowarp.org/",                cat:"hub", added:"2026-02-26" },
+  { name:"Bored",                url:"https://bored.pisaucer.com/",           cat:"hub", added:"2026-04-23" },
   { name:"QuickDraw",            url:"https://quickdraw.withgoogle.com/",     cat:"fun" },
   { name:"Neal.fun",             url:"https://neal.fun/",                     cat:"fun" },
   { name:"Akinator",             url:"https://en.akinator.com/",              cat:"fun" },
@@ -989,6 +1099,7 @@ const LINKS = [
   { name:"Internet Arcade",      url:"https://archive.org/details/internetarcade", cat:"retro" },
   { name:"RomsFun",              url:"https://romsfun.com/",                  cat:"retro" },
   { name:"JS Linux",             url:"https://bellard.org/jslinux/",          cat:"retro" },
+  /* Note: classicgameszone.com only serves over HTTP, not HTTPS */
   { name:"Classicgameszone",     url:"http://classicgameszone.com/",          cat:"retro", added:"2026-03-06" },
   { name:"Maths Playground",     url:"https://www.mathplayground.com/fun-skill-games.html", cat:"edu" },
   { name:"MathPlayZone Arcade",  url:"https://mathplayzone.com/arcade/",      cat:"edu" },
@@ -996,13 +1107,11 @@ const LINKS = [
   { name:"Duck Math",            url:"https://duckmath.org/",                 cat:"edu" },
   { name:"GN Math",              url:"https://gn-math.github.io/",            cat:"edu" },
   { name:"Memory Games",         url:"https://memory.toys/",                  cat:"edu" },
+  { name:"Gutenberg",            url:"https://gutenberg.org/",                cat:"edu", added:"2026-04-22" },
   { name:"BitLife",              url:"https://bitlifeonline.io/home",          cat:"sim" },
   { name:"Fallen London",        url:"https://www.fallenlondon.com/",          cat:"sim" },
   { name:"Granblue Fantasy",     url:"https://granbluefantasy.jp/sp/en/",      cat:"sim" },
   { name:"Startpage",            url:"https://startpage.com/",                cat:"proxy", added:"2026-02-25" },
-   {name:"Eaglercraft", url:"https://eaglercraft.com/", cat:"classic", added:"2026-03-25"},
-   {name:"Gutenberg", url:"https://gutenberg.org/", cat:"edu", added:"2026-04-22"},
-   {name:"Bored", url:"https://bored.pisaucer.com/", cat:"hub", added:"2026-04-23"},
 ];
 
 const CAT_LABELS = {
@@ -1093,6 +1202,8 @@ let hasEntered   = Store.get('gg_entered', false);
 function applyTheme(){
   document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
   $('themeBtn').setAttribute('aria-pressed', String(isDark));
+  // Update the theme-color meta so the browser chrome matches
+  $('themeColorMeta').setAttribute('content', isDark ? '#0a1628' : '#6ec6f5');
   const icon = $('themeIcon');
   if(isDark){
     icon.setAttribute('d','M12 3v1m0 16v1m9-9h-1M4 12H3m15.36-6.36l-.7.7M6.34 17.66l-.7.7m12.02.02l-.7-.7M6.34 6.34l-.7-.7M17 12a5 5 0 1 1-10 0 5 5 0 0 1 10 0z');
@@ -1129,20 +1240,47 @@ $('viewBtn').addEventListener('click', () => {
 });
 
 /* ======================================================================
-   TAP-TO-PLAY GATE
+   TAP-TO-PLAY GATE — with proper focus trap
    ====================================================================== */
+function trapFocus(el) {
+  const focusable = el.querySelectorAll(
+    'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  );
+  const first = focusable[0];
+  const last  = focusable[focusable.length - 1];
+  el.addEventListener('keydown', function handler(e) {
+    if (e.key !== 'Tab') return;
+    if (e.shiftKey) {
+      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
+  // Focus the first focusable element when trap is set
+  first?.focus();
+}
+
 function enterGallery(){
   hasEntered = true;
   Store.set('gg_entered', true);
-  $('gateOverlay').classList.add('hidden');
+  const overlay = $('gateOverlay');
+  overlay.classList.add('hidden');
+  // Mark as hidden from assistive technology once dismissed
+  overlay.setAttribute('aria-hidden', 'true');
   showToast('Welcome! ✦ Music enabled', 2500);
   SFX.unlock();
   tryAutoplay();
+  // Return focus to the page
+  $('searchInput').focus();
 }
 
 $('gateBtn').addEventListener('click', enterGallery);
 $('gateOverlay').addEventListener('click', e => {
   if(e.target === $('gateOverlay')) enterGallery();
+});
+// Close gate on Escape key
+$('gateOverlay').addEventListener('keydown', e => {
+  if(e.key === 'Escape') enterGallery();
 });
 
 /* ======================================================================
@@ -1154,13 +1292,14 @@ function setupFeatured(){
     ? withDates.reduce((a,b) => new Date(a.added) > new Date(b.added) ? a : b)
     : LINKS[0];
 
-  const emojis = { io:'🕹️', hub:'🗂️', classic:'👾', fun:'🎉', retro:'💾', edu:'📚', sim:'🌍' };
+  const emojis = { io:'🕹️', hub:'🗂️', classic:'👾', fun:'🎉', retro:'💾', edu:'📚', sim:'🌍', proxy:'🔓' };
   $('featuredIcon').textContent = emojis[game.cat] || '🎮';
   $('featuredName').textContent = game.name;
   $('featuredHost').textContent = game.added
     ? `Added ${new Date(game.added + 'T00:00').toLocaleDateString('en-IE',{day:'numeric',month:'long',year:'numeric'})}`
     : hostOf(game.url);
   $('featuredLink').href = game.url;
+  $('featuredLink').setAttribute('aria-label', `Play ${game.name} (opens in new tab)`);
 }
 
 /* ======================================================================
@@ -1183,7 +1322,7 @@ function renderRecent(){
     const a = document.createElement('a');
     a.className = 'recent-chip';
     a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
-    a.setAttribute('aria-label', link.name);
+    a.setAttribute('aria-label', `Open ${link.name} (recently visited)`);
     a.addEventListener('click', () => trackVisit(url));
     const img = document.createElement('img');
     img.src = favUrl(url); img.alt = ''; img.loading = 'lazy';
@@ -1195,7 +1334,7 @@ function renderRecent(){
 }
 
 /* ======================================================================
-   FILTER BUTTONS
+   FILTER BUTTONS — using role="tab" for proper ARIA semantics
    ====================================================================== */
 function buildFilters(){
   const bar = $('filterBar');
@@ -1205,12 +1344,14 @@ function buildFilters(){
     btn.className = 'filter-btn' + (cat==='all'?' active':'');
     btn.textContent = CAT_LABELS[cat];
     btn.dataset.cat = cat;
-    btn.setAttribute('aria-pressed', String(cat==='all'));
+    // role="tab" + aria-selected is the correct pattern for a tab strip
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-selected', String(cat==='all'));
     btn.addEventListener('click', () => {
       currentCat = cat;
       bar.querySelectorAll('.filter-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.cat===cat);
-        b.setAttribute('aria-pressed', String(b.dataset.cat===cat));
+        b.setAttribute('aria-selected', String(b.dataset.cat===cat));
       });
       render();
     });
@@ -1292,7 +1433,8 @@ function render(){
     a.className = 'tile' + (isFav?' fav-tile':'');
     a.href = l.url; a.target='_blank'; a.rel='noopener noreferrer';
     a.setAttribute('role','listitem');
-    a.setAttribute('aria-label', l.name);
+    // Descriptive aria-label so screen readers announce the action
+    a.setAttribute('aria-label', `Open ${l.name} in new tab`);
     a.style.animationDelay = `${Math.min(i*16,280)}ms`;
 
     a.addEventListener('click', () => { trackVisit(l.url); renderRecent(); });
@@ -1311,9 +1453,12 @@ function render(){
 
     const favBtn = document.createElement('button');
     favBtn.className = 'tile-fav' + (isFav?' active':'');
-    favBtn.title = isFav ? 'Remove from favourites' : 'Add to favourites';
-    favBtn.setAttribute('aria-label', isFav ? `Remove ${l.name} from favourites` : `Favourite ${l.name}`);
-    favBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="${isFav?'none':'var(--text-soft)'}" stroke-width="1.5" fill="${isFav?'var(--star-active)':'none'}"/></svg>`;
+    // Both title (tooltip) and aria-label (screen reader)
+    const favLabel = isFav ? `Remove ${l.name} from favourites` : `Add ${l.name} to favourites`;
+    favBtn.setAttribute('aria-label', favLabel);
+    favBtn.setAttribute('title', favLabel);
+    favBtn.setAttribute('aria-pressed', String(isFav));
+    favBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="${isFav?'none':'var(--text-soft)'}" stroke-width="1.5" fill="${isFav?'var(--star-active)':'none'}"/></svg>`;
     favBtn.addEventListener('click', e => {
       e.preventDefault(); e.stopPropagation();
       if(favourites.has(l.url)){ favourites.delete(l.url); showToast(`Removed from favourites`); }
@@ -1323,10 +1468,11 @@ function render(){
     });
 
     const reportBtn = document.createElement('button');
+    const reportLabel = `Report broken link: ${l.name}`;
     reportBtn.className = 'tile-report';
-    reportBtn.title = 'Report broken link';
-    reportBtn.setAttribute('aria-label', `Report broken link: ${l.name}`);
-    reportBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M12 8v5" stroke="var(--danger)" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="var(--danger)"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="var(--danger)" stroke-width="1.5" stroke-linejoin="round"/></svg> Report`;
+    reportBtn.setAttribute('aria-label', reportLabel);
+    reportBtn.setAttribute('title', reportLabel);
+    reportBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8v5" stroke="var(--danger)" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16.5" r="1" fill="var(--danger)"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="var(--danger)" stroke-width="1.5" stroke-linejoin="round"/></svg> Report`;
     reportBtn.addEventListener('click', e => {
       e.preventDefault(); e.stopPropagation();
       const title = encodeURIComponent(`Broken link: ${l.name}`);
@@ -1336,7 +1482,9 @@ function render(){
 
     if(isNew(l.added)){
       const badge = document.createElement('div');
-      badge.className='tile-badge-new'; badge.textContent='NEW';
+      badge.className='tile-badge-new';
+      badge.textContent='NEW';
+      badge.setAttribute('aria-label', 'New game');
       a.appendChild(badge);
     }
 
@@ -1354,7 +1502,7 @@ function render(){
 const searchInput = $('searchInput');
 searchInput.addEventListener('input', debounce(e => { currentQuery=e.target.value; render(); }, 100));
 document.addEventListener('keydown', e => {
-  if(e.key==='/' && document.activeElement!==searchInput){
+  if(e.key==='/' && document.activeElement!==searchInput && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){
     e.preventDefault(); searchInput.focus(); searchInput.select();
   }
   if(e.key==='Escape' && document.activeElement===searchInput){
@@ -1364,6 +1512,7 @@ document.addEventListener('keydown', e => {
 
 $('sortSelect').addEventListener('change', e => { currentSort=e.target.value; render(); });
 
+// Arrow-key navigation within the grid
 grid.addEventListener('keydown', e => {
   const items = [...grid.querySelectorAll('.tile')];
   const idx   = items.indexOf(document.activeElement);
@@ -1389,7 +1538,19 @@ function openSpinner(){
   $('spinnerName').textContent = game.name;
   $('spinnerHost').textContent = hostOf(game.url);
   $('spinnerGo').href = game.url;
-  $('spinnerOverlay').classList.add('open');
+  $('spinnerGo').setAttribute('aria-label', `Play ${game.name} (opens in new tab)`);
+  const overlay = $('spinnerOverlay');
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
+  // Focus the close button for keyboard users
+  setTimeout(() => $('spinnerClose').focus(), 50);
+}
+
+function closeSpinner(){
+  const overlay = $('spinnerOverlay');
+  overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden', 'true');
+  $('randomBtn').focus();
 }
 
 $('randomBtn').addEventListener('click', () => { SFX.random(); openSpinner(); });
@@ -1400,10 +1561,12 @@ $('spinnerAgain').addEventListener('click', () => {
     $('spinnerName').textContent = g.name;
     $('spinnerHost').textContent = hostOf(g.url);
     $('spinnerGo').href = g.url;
+    $('spinnerGo').setAttribute('aria-label', `Play ${g.name} (opens in new tab)`);
   }, 200);
 });
-$('spinnerClose').addEventListener('click', () => $('spinnerOverlay').classList.remove('open'));
-$('spinnerOverlay').addEventListener('click', e => { if(e.target===$('spinnerOverlay')) $('spinnerOverlay').classList.remove('open'); });
+$('spinnerClose').addEventListener('click', closeSpinner);
+$('spinnerOverlay').addEventListener('click', e => { if(e.target===$('spinnerOverlay')) closeSpinner(); });
+$('spinnerOverlay').addEventListener('keydown', e => { if(e.key==='Escape') closeSpinner(); });
 
 /* ======================================================================
    AUDIO
@@ -1486,6 +1649,9 @@ document.addEventListener('mousedown', e => {
 (function initCursor(){
   const dot  = $('cursorDot');
   const ring = $('cursorRing');
+  // Only run on proper pointer devices
+  if(!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
   let rx=0,ry=0, tx=0,ty=0;
 
   document.addEventListener('mousemove', e => {
@@ -1556,6 +1722,7 @@ function setupSeason(){
 
   const pill = $('seasonPill');
   pill.textContent = `${data.emoji} ${data.label}`;
+  pill.setAttribute('aria-label', `Current season: ${data.label}`);
 
   if(data.particles && data.chars.length){
     const container = $(data.particles);
@@ -1589,10 +1756,13 @@ window.addEventListener('DOMContentLoaded', () => {
   render();
 
   if(hasEntered){
-    $('gateOverlay').classList.add('hidden');
+    const overlay = $('gateOverlay');
+    overlay.classList.add('hidden');
+    overlay.setAttribute('aria-hidden', 'true');
     tryAutoplay();
   } else {
-    searchInput.blur();
+    // Trap focus inside gate so keyboard users can't tab into the hidden page
+    trapFocus($('gateOverlay'));
   }
 });
 </script>
