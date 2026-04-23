@@ -1,11 +1,10 @@
 <H1>No ads, No trackers, no paywalls</H1>
-# Game-gallery
-I made this site for fun in school using a collection of game links i made.
-Made with help from chatGPT and Claude.ai
+Ever felt like every good games site is just full of ads and bloat? Me too, thats why i got claude to help me make this. Be informed, this is not a games site, this is just a page to link with other games sites. 
 
 
 
-some sites may be broken/blocked. this isnt my fault and is either your network filtering options or it is the people behind the site. if you find any issues please let me know
+
+some sites may be broken/blocked. this isnt my fault and is either your network filtering options or it is the people behind the site. if you find any issues please let me know, please be bothered to check if its your network or if the site is gone, 
 ![Screenshot of project](Image.png)
 enjoy the site!
 Note: i made this for my school to work as a games hub, if the link to this site gets found it is nearly a guarentee to get all sites here banned. I might changed the link frequently
