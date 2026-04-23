@@ -4,13 +4,7 @@ I made this site for fun in school using a collection of game links i made.
 Made with help from chatGPT and Claude.ai
 
 
-Song used is:
-"Palm Mall" by [猫 シ Corp.]  
-Source: [https://catsystemcorp.bandcamp.com/album/palm-mall]  
-Licensed under CC BY 4.0  
-https://creativecommons.org/licenses/by/4.0/
-little bird is: https://github.com/IdreesInc/Pocket-Bird?tab=readme-ov-file#your-own-website
-full credits for the bird go to: https://github.com/IdreesInc
+
 some sites may be broken/blocked. this isnt my fault and is either your network filtering options or it is the people behind the site. if you find any issues please let me know
 ![Screenshot of project](Image.png)
 enjoy the site!
