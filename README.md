@@ -24,4 +24,4 @@ full credits for the bird go to: https://github.com/IdreesInc
 
 <h3>enjoy the site!</h3>
 
-note:yes on the vercel page there is a tracker(i think at least), i use this to see how the site is running and how often its used and visited, if you have a problem with it, you can use the github pages link: 
+note:yes on the vercel page there is a tracker(i think at least), i use this to see how the site is running and how often its used and visited, if you have a problem with it, you can use the github pages link: https://red404441.github.io/Game-Gallery/
