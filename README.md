@@ -1,4 +1,4 @@
-<H1>No ads, No trackers, no paywalls</H1>
+<H1>No ads, No trackers*, no paywalls</H1>
 Ever felt like every good games site is just full of ads and bloat? Me too, thats why i got claude to help me make this. Be informed, this is not a games site, this is just a page to link with other games sites. 
 
 
@@ -23,3 +23,5 @@ little bird is: https://github.com/IdreesInc/Pocket-Bird?tab=readme-ov-file#your
 full credits for the bird go to: https://github.com/IdreesInc
 
 <h3>enjoy the site!</h3>
+
+note:yes on the vercel page there is a tracker(i think at least), i use this to see how the site is running and how often its used and visited, if you have a problem with it, you can use the github pages link: 
