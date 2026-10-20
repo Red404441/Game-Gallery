@@ -11,7 +11,6 @@ Note: i made this for my school to work as a games hub.
 if you have any game recomendations or sites you want added, feel free to get in contact. 
 used ai for tags, if you see something in there the tag doesnt match, refer to the first 4 words of this line.
 
-vercel page incase github is banned: https://game-gallery-six.vercel.app/
 
 <h2>Credits</h2>
 Song used is:
@@ -26,3 +25,11 @@ full credits for the bird go to: https://github.com/IdreesInc
 <h3>enjoy the site!</h3>
 
 note:yes on the vercel page there is a tracker(i think at least), i use this to see how the site is running and how often its used and visited, if you have a problem with it, you can use the github pages link: https://red404441.github.io/Game-Gallery/
+
+
+
+
+Sites:
+Pages:  https://red404441.github.io/Game-Gallery/
+Vercel: https://game-gallery-six.vercel.app/
+
